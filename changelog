@@ -13,6 +13,9 @@ turnkey-redis-19.0 (1) turnkey; urgency=low
   * Preserve the selected Redis network binding and reliably reload the
     first-boot Redis Commander credentials.
 
+  * Start Nginx after first-boot TLS certificate generation so Redis Commander
+    is available on the initial HTTPS session.
+
   * See the TurnKey Core 19.0 changelog for changes common to all appliances.
 
  -- TurnKey Linux release engineering <release@turnkeylinux.org>  Mon, 24 Aug 2026 00:00:00 +0000

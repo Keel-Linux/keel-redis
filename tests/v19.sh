@@ -59,13 +59,48 @@ test "$(redis-cli --no-auth-warning -a "$redis_password" get "$key")" = \
 test "$(redis-cli --no-auth-warning -a "$redis_password" del "$key")" = 1
 test "$(redis-cli --no-auth-warning -a "$redis_password" exists "$key")" = 0
 
-unauth_status=$(curl --insecure --silent --output /dev/null \
-    --write-out '%{http_code}' https://127.0.0.1/redis-commander/)
-test "$unauth_status" = 401
+commander_status=
+for _ in {1..30}; do
+    commander_status=$(curl --insecure --silent --output /dev/null \
+        --write-out '%{http_code}' \
+        https://127.0.0.1/redis-commander/ || true)
+    [[ $commander_status == 200 ]] && break
+    sleep 1
+done
+test "$commander_status" = 200
 curl --insecure --fail --silent --show-error \
-    --user "admin:$admin_password" \
     https://127.0.0.1/redis-commander/ >"$response"
 grep -qi 'redis commander' "$response"
+
+unauth_status=$(curl --insecure --silent --output /dev/null \
+    --write-out '%{http_code}' \
+    https://127.0.0.1/redis-commander/connections)
+test "$unauth_status" = 401
+curl --insecure --fail --silent --show-error \
+    --data-urlencode username=admin \
+    --data-urlencode "password=$admin_password" \
+    https://127.0.0.1/redis-commander/signin >"$response"
+bearer_token=$(python3 - "$response" <<'PYTHON'
+import json
+import sys
+
+result = json.load(open(sys.argv[1]))
+assert result.get("ok") is True
+print(result["bearerToken"])
+PYTHON
+)
+curl --insecure --fail --silent --show-error \
+    --header "Authorization: Bearer $bearer_token" \
+    https://127.0.0.1/redis-commander/connections >"$response"
+python3 - "$response" <<'PYTHON'
+import json
+import sys
+
+result = json.load(open(sys.argv[1]))
+assert result.get("ok") is True
+assert result.get("connections")
+PYTHON
+
 curl --insecure --fail --silent --show-error https://127.0.0.1/ \
     >"$response"
 grep -q 'Redis GUI' "$response"
@@ -126,7 +161,7 @@ grep -Rqs '^Suites: trixie' /etc/apt/sources.list.d
 cat >"$result" <<EOF
 package_source=Debian 13 Trixie APT repositories for Redis Server, Redis tools, Node.js, npm and Nginx; official npm registry for Redis Commander and application dependencies
 installed_version=redis-server $redis_version; redis-tools $redis_tools_version; nodejs $node_version; npm $npm_version; nginx $nginx_version; redis-commander $commander_version
-runtime_checks=normal init; authenticated Redis PING; unauthenticated denial; configured all-interface bind and protected mode; set, get, synchronous save, service restart, persisted get and delete round trip; Redis Commander HTTP authentication and page; landing page; Redis Commander and TurnKey control panel online under PM2
+runtime_checks=normal init; authenticated Redis PING; unauthenticated denial; configured all-interface bind and protected mode; set, get, synchronous save, service restart, persisted get and delete round trip; Redis Commander login, protected connections API and page; landing page; Redis Commander and TurnKey control panel online under PM2
 updater_command=apt-get update; apt-cache policy redis-server redis-tools nodejs npm nginx; npm view redis-commander version; npm install redis-commander@latest
 updater_result=signed Debian metadata refreshed; installed packages unchanged; Redis Commander registry candidate $commander_candidate; package-lock integrity fields present
 updater_channel=Debian Trixie APT repositories and official npm registry

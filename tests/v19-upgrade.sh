@@ -35,14 +35,41 @@ start_commander() {
         >commander.log 2>&1 &
     commander_pid=$!
     for _ in {1..30}; do
-        if curl --fail --silent --user admin:fixture \
-                http://127.0.0.1:8082/ | grep -qi 'redis commander'; then
-            return
+        status=$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            http://127.0.0.1:8082/ || true)
+        if [[ $status == 200 || $status == 401 ]]; then
+            break
         fi
         sleep 1
     done
-    cat commander.log >&2
-    return 1
+    version=$(node -p "require('redis-commander/package.json').version")
+    if [[ $version == 0.8.* ]]; then
+        curl --fail --silent --user admin:fixture \
+            http://127.0.0.1:8082/ | grep -qi 'redis commander'
+        return
+    fi
+    curl --fail --silent \
+        --data-urlencode username=admin --data-urlencode password=fixture \
+        http://127.0.0.1:8082/signin >"$workdir/signin.json"
+    bearer_token=$(python3 - "$workdir/signin.json" <<'PYTHON'
+import json
+import sys
+
+result = json.load(open(sys.argv[1]))
+assert result.get("ok") is True
+print(result["bearerToken"])
+PYTHON
+)
+    curl --fail --silent --header "Authorization: Bearer $bearer_token" \
+        http://127.0.0.1:8082/connections >"$workdir/connections.json"
+    python3 - "$workdir/connections.json" <<'PYTHON'
+import json
+import sys
+
+result = json.load(open(sys.argv[1]))
+assert result.get("ok") is True
+assert result.get("connections")
+PYTHON
 }
 
 stop_commander() {
