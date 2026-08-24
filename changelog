@@ -1,3 +1,22 @@
+turnkey-redis-19.0 (1) turnkey; urgency=low
+
+  * Upgrade the base distribution to Debian 13/Trixie.
+
+  * Update Redis to Debian's 8.0 series.
+
+  * Use Debian's Node.js and npm packages for the management application
+    runtime.
+
+  * Install Redis Commander from its maintained npm registry release with
+    dependency integrity metadata and a supported npm update path.
+
+  * Preserve the selected Redis network binding and reliably reload the
+    first-boot Redis Commander credentials.
+
+  * See the TurnKey Core 19.0 changelog for changes common to all appliances.
+
+ -- TurnKey Linux release engineering <release@turnkeylinux.org>  Mon, 24 Aug 2026 00:00:00 +0000
+
 turnkey-redis-18.0 (1) turnkey; urgency=low
 
   * Update Redis-Commander (via NPM) to latest upstream release: v0.8.1.

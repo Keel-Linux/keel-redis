@@ -1,15 +1,38 @@
 #!/bin/bash -ex
 
 NODEUSER=node
+NODEAPP=/opt/tklweb-cp
 
-REPO="joeferner/redis-commander"
-VERSION=$(gh_releases $REPO | sort -V | tail -1)
-URL="git+https://github.com/$REPO.git"
+# Keep npm registry access on the system-managed trust path.
+grep -qxF 'cafile=/etc/ssl/certs/ca-certificates.crt' /home/$NODEUSER/.npmrc || \
+    echo 'cafile=/etc/ssl/certs/ca-certificates.crt' >> /home/$NODEUSER/.npmrc
+chown $NODEUSER:$NODEUSER /home/$NODEUSER/.npmrc
 
-su -lc "[[ "$FAB_HTTP_PROXY" ]] && export http_proxy=$FAB_HTTP_PROXY; cd /opt/tklweb-cp && npm i $URL#$VERSION" $NODEUSER
-su -lc "[[ "$FAB_HTTP_PROXY" ]] && export http_proxy=$FAB_HTTP_PROXY; cd /opt/tklweb-cp && pm2 start ecosystem.config.js && sleep 20 && pm2 save && pm2 kill" $NODEUSER
+# Redis Commander is not packaged by Debian. Install the current release from
+# its maintained npm channel and retain npm's integrity-bearing lock file.
+VERSION=$(su -lc "npm view redis-commander version" $NODEUSER)
+su -lc "[[ -n \"$FAB_HTTP_PROXY\" ]] && export http_proxy=\"$FAB_HTTP_PROXY\"; cd $NODEAPP && npm install --save-exact redis-commander@$VERSION" $NODEUSER
+su -lc "cd $NODEAPP && pm2 start ecosystem.config.js && sleep 20 && pm2 save && pm2 kill" $NODEUSER
 
-echo {} > /opt/tklweb-cp/node_modules/redis-commander/config/local-production.json
+echo {} > $NODEAPP/node_modules/redis-commander/config/local-production.json
 
 rm /etc/nginx/sites-enabled/tkl-default
 ln -s /etc/nginx/sites-available/redis /etc/nginx/sites-enabled/redis
+
+# The inherited build profile uses n temporarily. Ship Debian's maintained
+# Trixie Node.js and npm commands while retaining the npm-managed PM2 service.
+rm -f /usr/local/bin/{n,node,npm,npx,corepack}
+rm -rf /usr/local/n \
+       /usr/local/src/n \
+       /usr/local/include/node \
+       /usr/local/lib/node_modules/npm \
+       /usr/local/lib/node_modules/corepack \
+       /usr/local/share/doc/node \
+       /usr/local/share/man/man1/node.1
+rm -f /usr/local/etc/npmrc
+
+hash -r
+dpkg-query -S "$(readlink -f "$(command -v node)")" | grep -q '^nodejs:'
+dpkg-query -S "$(readlink -f "$(command -v npm)")" | grep -q '^npm:'
+
+rm -rf /tmp/npm*
