@@ -17,3 +17,7 @@ fi
 
 $INITHOOKS_PATH/bin/redis.py --pass="$APP_PASS" \
     --bind="$APP_IP_BIND" --protected_mode="$APP_PROTECTED"
+
+# The TLS certificate hook only restarts services that were already active.
+# Ensure Nginx starts with the completed certificate and key pair.
+systemctl restart --quiet nginx.service

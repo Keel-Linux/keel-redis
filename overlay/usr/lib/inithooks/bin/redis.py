@@ -70,10 +70,10 @@ def main():
                 ("local", "Enter custom range")))
     if bind == "all":
         bind_ip = "0.0.0.0"
-    if bind == "local":
+    elif bind == "local":
         localaddr = InterfaceInfo(get_ifnames()[0]).address
         d = Dialog('TurnKey Linux - First boot configuration')
-        bind_ip = d.get_input("Bind IP Range", "Enter bind ip range", localaddr)    
+        bind_ip = d.get_input("Bind IP Range", "Enter bind ip range", localaddr)
     else:
         bind_ip = "127.0.0.1"
 
@@ -102,26 +102,27 @@ def main():
         redis_commander_conf])
 
     # restart redis and redis commander if running so change takes effect
-    try:
-        subprocess.run(["systemctl", "is-active",
-                        "--quiet", "redis-server.service"])
-        subprocess.run(["service", "redis-server", "restart"])
-    except ExecError:
-        pass
+    if subprocess.run(["systemctl", "is-active", "--quiet",
+                       "redis-server.service"]).returncode == 0:
+        subprocess.run(["service", "redis-server", "restart"], check=True)
 
     # reload and restart pm2 so changes take affect
     # and save them to /home/node/.pm2/dump.pm2
-    try:
-        subprocess.run(["systemctl", "is-active",
-                        "--quiet", "pm2-node.service"])
-        subprocess.run(["systemctl", "reload",
-                        "pm2-node.service"])
-#        subprocess.run(["rm", "/home/node/.pm2/dump.pm2"])
-        subprocess.run(["pm2", "reload", "/opt/tklweb-cp/ecosystem.config.js"],env={"PM2_HOME": "/home/node/.pm2", "PATH": "/usr/local/bin"}, check=True, user="node")
-        subprocess.run(["pm2", "save"],env={"PM2_HOME": "/home/node/.pm2", "PATH": "/usr/local/bin"}, check=True, user="node")
-        subprocess.run(["service", "pm2-node", "restart"])
-    except ExecError:
-        pass
+    if subprocess.run(["systemctl", "is-active", "--quiet",
+                       "pm2-node.service"]).returncode == 0:
+        environment = [
+            "env", "PM2_HOME=/home/node/.pm2",
+            "PATH=/usr/local/bin:/usr/bin:/bin",
+        ]
+        subprocess.run([
+            "runuser", "--user", "node", "--", *environment,
+            "pm2", "reload", "/opt/tklweb-cp/ecosystem.config.js",
+        ], check=True)
+        subprocess.run([
+            "runuser", "--user", "node", "--", *environment,
+            "pm2", "save",
+        ], check=True)
+        subprocess.run(["service", "pm2-node", "restart"], check=True)
 
 
 if __name__ == "__main__":
