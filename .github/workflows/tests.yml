@@ -54,6 +54,7 @@ jobs:
     uses: keel-linux/.github/.github/workflows/test-appliance.yml@verify/gate-behaviour
     with:
       appliance: redis
+      allow_unpublished: true
       # A layer on core; the workflow checks this against the parent the
       # published manifest records.
       parent: core
