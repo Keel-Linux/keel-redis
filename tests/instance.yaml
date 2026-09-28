@@ -1,0 +1,66 @@
+# Instance description of the boot test (format: docs/spec.md of the keel
+# repository). IPv6 first, address from the bridge, no certificate request.
+# The two secrets are files the test writes into the rootfs before booting,
+# which is the whole point of this test: secrets.db_password is declared
+# here, nothing is typed at the console, and after the first boot a client
+# authenticates with exactly that value.
+#
+# This is the throwaway container the gate boots. The description an
+# operator would start from is keel/instance.example.yaml.
+version: 1
+
+instance:
+  hostname: redis
+  fqdn: redis.example.org
+
+network:
+  # The container's address comes from the bridge, so the host owns the
+  # interface configuration and 01ipconfig writes nothing.
+  managed_by: host
+  interfaces:
+    eth0:
+      ipv6:
+        method: auto
+
+tls:
+  acme:
+    enabled: false
+
+secrets:
+  root_password:
+    file: /etc/keel/secrets/root_password
+  # What this layer exists for. It renders to DB_PASS, which
+  # firstboot.d/35redispass of the unit.d/redis component turns into the ACL
+  # rule the server reads. On Redis it is not a database account's password:
+  # it is the password of an ACL user, and the server keeps its SHA-256.
+  db_password:
+    file: /etc/keel/secrets/db_password
+
+app:
+  options:
+    # Renders to APP_DB_USER: the ACL user the declared secret belongs to.
+    db_user: admin
+
+database:
+  server:
+    # What the machine is, and what the boot test reads back off the running
+    # server with `keel inspect`. Against the container's rootfs as an
+    # offline root, `keel diff` cannot ask the server, so this section is
+    # unknown there and the run exits 13, which bt_diff_verdict accepts and
+    # explains. The live reading is step 11 of the boot test.
+    engine: redis
+    role: standalone
+    listen:
+      - ::1
+      - 127.0.0.1
+
+hub:
+  api_key: skip
+
+security:
+  alerts: skip
+  # A first boot input, not machine state: 95secupdates installs the pending
+  # security updates once. diff does not compare it.
+  updates_at_first_boot: skip
+
+first_login_wizard: false

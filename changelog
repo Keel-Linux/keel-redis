@@ -1,3 +1,71 @@
+turnkey-redis-19.0 (2) turnkey; urgency=low
+
+  * Rebuilt as a Keel layer on core, carrying the Redis server as the
+    unit.d/redis component (keel-linux/unit-redis), which fab resolves and
+    applies and bt-layer records in the layer manifest as
+    "units redis@<version>". Decision 0013 is the reason: a database is a
+    component, not a parent layer, so every appliance that needs Redis is
+    built on this one instead of installing its own.
+
+  * Redis 8.0 from Debian 13 (Trixie), listening on ::1 and 127.0.0.1 only,
+    both as literal addresses. Debian ships "bind 127.0.0.1 -::1", where the
+    dash makes ::1 optional and a server that cannot bind it starts anyway
+    and answers one family. No name is used anywhere: Debian maps ::1 to
+    ip6-localhost and never to localhost, which is how the PostgreSQL
+    appliance shipped listening on IPv4 only.
+
+  * The Redis secret comes from the instance description and is the password
+    of an ACL user, not requirepass. secrets.db_password renders to DB_PASS,
+    which firstboot.d/35redispass of the component turns into an ACL rule
+    holding the SHA-256 of that password, in a file owned root:redis 0640.
+    Two things follow, and both are the point rather than side effects.
+
+    The server answers INFO to anybody who can reach it on loopback and no
+    key to anybody without the secret, which is what lets `keel inspect`
+    read database.server.role: it never reads a secret to get past a
+    refusal, so an appliance with requirepass set could not say that it is
+    standalone, nor later that it is a primary or a replica.
+
+    And nothing on the machine can print the secret back, because what the
+    configuration holds is a digest. Before the first boot the account is
+    published "off", so the layer carries no usable credential at all.
+
+  * Removed with it: 20regen-redis-secrets, which generated a password into
+    a world readable /etc/redis/redis.conf; 40redis and bin/redis.py, which
+    asked at the console for the bind address and protected mode, both of
+    which the instance description and the component now decide;
+    turnkey-redis-pw and the confconsole plugin that copied the password
+    into /root/redis_password.txt, neither of which has anything to read now
+    that the configuration holds a digest.
+
+  * Redis Commander, nginx, the Node.js runtime, pm2 and the landing page
+    are deliberately left out: they belong to a web stack, which is the same
+    reason Adminer is not in keel-mariadb. If the maintainer wants literal
+    parity with the upstream redis appliance, that is a different artefact,
+    built on this layer.
+
+  * No Webmin module. Debian 13 packages webmin-mysql and webmin-postgresql
+    and no equivalent for Redis. conf.d/main fails the build the day one is
+    packaged, and the boot test checks the machine offers none, so the
+    absence is a checked fact rather than a silence.
+
+  * The project's own packages (inithooks, confconsole, keel) are installed
+    from the build host's archive, verified there with gpgv against the
+    staging key rather than trusted, and then checked against what that
+    archive offers rather than against a literal version
+    (conf.d/zz-project-packages): a literal passes whenever a build reads a
+    stale index, which is how the forum layer of 2026-09-26 shipped the
+    previous morning's packages with a green build. keel 0.3.5 is the floor,
+    because that is where `keel inspect` reads the database section.
+
+  * Tests: 92 bats tests, and a boot test that assembles the published
+    layer, boots it in LXC, authenticates over IPv6 with the declared
+    secret, writes and reads a key, is refused a key without the secret,
+    checks Webmin, reads the role back off the server as standalone, and
+    runs keel diff.
+
+ -- Keel Linux maintainers <admin@keellinux.org>  Mon, 28 Sep 2026 00:00:00 +0000
+
 turnkey-redis-19.0 (1) turnkey; urgency=low
 
   * Upgrade the base distribution to Debian 13/Trixie.
