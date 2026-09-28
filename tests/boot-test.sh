@@ -181,10 +181,13 @@ refusal=$(lxc attach -- "${denied[@]}" 2>&1 || true)
 bt_db_denied_verdict "$refusal"
 
 # 10. The panel core carries. No Webmin module for Redis is packaged in
-#     Debian 13, which is checked rather than assumed: the day one appears
-#     the build says so too (conf.d/main).
-offered=$(lxc attach -- apt-cache --names-only search '^webmin-redis$' 2>/dev/null || true)
-bt_no_webmin_module_verdict "$offered"
+#     Debian 13, so none is installed, and that is checked rather than
+#     assumed. Asked of dpkg and not of apt-cache: the image carries no
+#     package lists, so an apt-cache search here would answer nothing
+#     whatever the archive holds. Whether the archive offers one is asked
+#     at build time, in conf.d/main, which fails the day it does.
+installed=$(lxc attach -- dpkg-query -W -f '${Status}' webmin-redis 2>/dev/null || true)
+bt_no_webmin_module_verdict "$installed"
 code=""
 webmin_answers() {
     code=$(curl -6 -k -s -o /dev/null -w '%{http_code}' \
