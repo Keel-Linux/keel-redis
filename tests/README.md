@@ -26,7 +26,10 @@ here. They belong to `keel-linux/unit-redis` and are measured there.
 
     tests/boot-test.sh redis --bridge lxcbr0 --layers-dir /mnt/builds/layers
 
-Root only. Assembles the published layer chain into an LXC rootfs, boots it
+Root only, and executable: `test-appliance.yml` refuses to run a
+`tests/boot-test.sh` that is not, with a message that names
+`git update-index --chmod=+x`. Git keeps the bit, an editor that rewrites the
+file does not. Assembles the published layer chain into an LXC rootfs, boots it
 headless from `tests/instance.yaml` and checks the six things COVERAGE.md
 lists. `--keep` leaves the container up for inspection; `--help` prints every
 option.
