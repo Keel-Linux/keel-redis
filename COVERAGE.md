@@ -42,11 +42,15 @@ waiting for a five repository change.
 
 ## What the boot test proves, line by line
 
-`appliance / build-and-boot` runs through the organization's
+`appliance / boot-published-layer` runs through the organization's
 `test-appliance.yml` on the self-hosted `keel-lxc` runner, which fetches the
 published layer from `https://mirror.keellinux.org/layers`, verifies it,
 assembles it, boots it in LXC and runs `tests/boot-test.sh`. Nothing is built
-there.
+there, so what boots is the published layer and not this branch: a pull request
+that changes the recipe is not exercised by this check, which is why the job is
+`boot-published-layer` and not the old `build-and-boot`. Until the layer is on
+the mirror the check fails rather than passing, which is where this repository
+stands today (keel-linux/.github pull request 12).
 
 1. **The declared secret reaches the server.** The description declares
    `secrets.db_password` from a file, nothing is configured by hand, and the
