@@ -51,7 +51,7 @@ jobs:
     # role keel inspect reads off the running server, which this single
     # node test already checks.
     if: vars.KEEL_LXC_RUNNER == 'true'
-    uses: keel-linux/.github/.github/workflows/test-appliance.yml@main
+    uses: keel-linux/.github/.github/workflows/test-appliance.yml@verify/gate-behaviour
     with:
       appliance: redis
       # A layer on core; the workflow checks this against the parent the
