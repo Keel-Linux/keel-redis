@@ -1,7 +1,16 @@
 #include <turnkey/base>
-#include <turnkey/nodejs-nginx>
 
-redis-server
+/* redis-server is the plan of the unit.d/redis component. fab resolves every
+   unit's plan together with this one, so it is not named here. */
+
+/* the command line client: the appliance talks to its own server over
+   loopback, the first boot hook proves the declared secret with it, and
+   `keel inspect` reads this machine's role with it. redis-server depends on
+   redis-tools at its own version, so this line adds no package; it says that
+   this layer needs the client, the way keel-mariadb names mariadb-client. */
 redis-tools
-nodejs                     # Debian Node.js runtime
-npm                        # Debian Node.js package manager
+
+/* project packages, resolved from the build host's staging repository */
+inithooks
+confconsole
+keel

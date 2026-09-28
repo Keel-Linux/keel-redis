@@ -1,38 +1,89 @@
 #!/bin/bash -ex
+# Redis, and nothing that serves a web page.
+#
+# The conf script of the unit.d/redis component has already run (fab runs the
+# units after the common conf scripts and before this one): it appended the
+# include of /etc/redis/redis.conf.d to Debian's conffile, checked that the
+# bind and ACL fragments arrived, started the server from that very file, and
+# proved it answers INFO on [::1] and on 127.0.0.1 and refuses every key to a
+# client with no secret.
+#
+# So what is left here is what a recipe owes: checking the component rather
+# than trusting it, and the project's own packages.
 
-NODEUSER=node
-NODEAPP=/opt/tklweb-cp
+# 1. The component's fragments are in the image, and say what they must say.
+#    The component asserted the behaviour during its own run; this asserts
+#    that the files it asserted are what the layer is about to ship, because
+#    a removelist, an overlay of this recipe or a later conf script could
+#    take one of them away and nothing else would notice.
+grep -qx 'bind ::1 127.0.0.1' /etc/redis/redis.conf.d/10-keel-bind.conf
+grep -qx 'user default on nopass +info' /etc/redis/redis.conf.d/20-keel-acl.conf
+grep -qx 'user admin off' /etc/redis/redis.conf.d/20-keel-acl.conf
+grep -qxF 'include /etc/redis/redis.conf.d/*.conf' /etc/redis/redis.conf
 
-# Keep npm registry access on the system-managed trust path.
-grep -qxF 'cafile=/etc/ssl/certs/ca-certificates.crt' /home/$NODEUSER/.npmrc || \
-    echo 'cafile=/etc/ssl/certs/ca-certificates.crt' >> /home/$NODEUSER/.npmrc
-chown $NODEUSER:$NODEUSER /home/$NODEUSER/.npmrc
+# 2. No password anywhere. The whole point of the ACL account is that this
+#    layer is published with no usable credential in it: a requirepass would
+#    be the same password on every appliance built from this layer, and the
+#    account 20-keel-acl.conf publishes is off until a first boot turns it on
+#    from the instance description.
+! grep -rqE '^[[:space:]]*requirepass' /etc/redis/
+! test -e /etc/redis/redis.conf.d/50-keel-secret.conf
 
-# Redis Commander is not packaged by Debian. Install the current release from
-# its maintained npm channel and retain npm's integrity-bearing lock file.
-VERSION=$(su -lc "npm view redis-commander version" $NODEUSER)
-su -lc "[[ -n \"$FAB_HTTP_PROXY\" ]] && export http_proxy=\"$FAB_HTTP_PROXY\"; cd $NODEAPP && npm install --save-exact redis-commander@$VERSION" $NODEUSER
-su -lc "cd $NODEAPP && pm2 start ecosystem.config.js && sleep 20 && pm2 save && pm2 kill" $NODEUSER
+# 3. The client is installed, because the first boot hook and `keel inspect`
+#    both run it. redis-server depends on it, so this is a check and not a
+#    request.
+dpkg-query -W -f '${Status}' redis-tools | grep -qx 'install ok installed'
+dpkg-query -W -f '${Status}' redis-server | grep -qx 'install ok installed'
 
-echo {} > $NODEAPP/node_modules/redis-commander/config/local-production.json
+# 4. Debian 13 packages no Webmin module for Redis, which README.rst says out
+#    loud rather than leaving a reader to look for the line. The check is
+#    here so that the day one appears is the day somebody is told, rather
+#    than a panel that could have had a Redis page and quietly does not.
+if apt-cache show webmin-redis > /dev/null 2>&1; then
+    echo "webmin-redis is in the archive now: add it to plan/main, check it" >&2
+    echo "in this script and check it on the booted machine in the boot test" >&2
+    exit 1
+fi
 
-rm /etc/nginx/sites-enabled/tkl-default
-ln -s /etc/nginx/sites-available/redis /etc/nginx/sites-enabled/redis
+# fab-plan-resolve keeps a package the parent layer already carries at the
+# parent's version, so the two core packages are upgraded here from the
+# build time source (keel, new in the plan, was installed from it already).
+#
+# The overlay of this layer ships /etc/confconsole/services.txt, which is a
+# conffile of confconsole, so dpkg sees it as locally modified and asks what
+# to do with it. The conf script runs with stdin closed, dpkg reads end of
+# file at the prompt and leaves confconsole "install ok unpacked", which
+# fails this script. Keep the overlay's file without asking.
+export DEBIAN_FRONTEND=noninteractive
+apt-get install -y --only-upgrade \
+    -o Dpkg::Options::=--force-confdef \
+    -o Dpkg::Options::=--force-confold \
+    inithooks confconsole
 
-# The inherited build profile uses n temporarily. Ship Debian's maintained
-# Trixie Node.js and npm commands while retaining the npm-managed PM2 service.
-rm -f /usr/local/bin/{n,node,npm,npx,corepack}
-rm -rf /usr/local/n \
-       /usr/local/src/n \
-       /usr/local/include/node \
-       /usr/local/lib/node_modules/npm \
-       /usr/local/lib/node_modules/corepack \
-       /usr/local/share/doc/node \
-       /usr/local/share/man/man1/node.1
-rm -f /usr/local/etc/npmrc
+# A half configured package keeps its new version, so check the state too.
+[[ $(dpkg-query -W -f '${Status}\n' inithooks confconsole keel \
+    | grep -c '^install ok installed$') -eq 3 ]]
 
-hash -r
-dpkg-query -S "$(readlink -f "$(command -v node)")" | grep -q '^nodejs:'
-dpkg-query -S "$(readlink -f "$(command -v npm)")" | grep -q '^npm:'
-
-rm -rf /tmp/npm*
+# What is installed is then checked against the archive rather than against a
+# literal version, which is conf.d/zz-project-packages, the last script of
+# this build. A literal passes whenever the build happens to read a stale
+# index, which is how the forum layer of 2026-09-26 shipped the previous
+# morning's inithooks and confconsole with a green build (docs/traps.md).
+#
+# keel 0.3.5 is what this layer is published to carry: `keel inspect` reads
+# database.server.role from INFO replication and INFO cluster there, which is
+# what the boot test checks and what the console's cloud modes will be built
+# on. A layer carrying keel 0.2.1 answers nothing for the database section
+# and the boot test's inspect check fails, so the floor is here as well as in
+# the archive check, because they fail for different reasons: this one says
+# the version is too old, that one says the index was stale.
+while read -r package floor; do
+    installed=$(dpkg-query -W -f '${Version}' "$package")
+    dpkg --compare-versions "$installed" ge "$floor" \
+        || { echo "$package $installed is older than $floor" >&2; exit 1; }
+done <<EOF
+inithooks 2.3.6+keel4
+confconsole 2.2.3+keel2
+keel 0.3.5
+EOF
+dpkg-query -W -f '${Package} ${Version} ${Status}\n' inithooks confconsole keel

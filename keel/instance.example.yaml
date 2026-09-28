@@ -1,0 +1,76 @@
+# Instance description of a Redis appliance, IPv6 first (docs/spec.md in the
+# keel repository). Copy to /etc/keel/instance.yaml and create the two secret
+# files (mode 0600, owned by root) before the first boot:
+#
+#   /etc/keel/secrets/root_password
+#   /etc/keel/secrets/db_password     the Redis 'admin' ACL user
+#
+# What secrets.db_password means here is the one thing worth reading before
+# using this file. Redis has no database account: the declared secret becomes
+# the password of an ACL user, and the server keeps only its SHA-256
+# (unit-redis, 20-keel-acl.conf). So a client authenticates with a user name
+# and that password, and nothing on the machine can print the password back:
+#
+#   REDISCLI_AUTH=$(cat /etc/keel/secrets/db_password) \
+#       redis-cli -h ::1 -p 6379 --user admin PING
+#
+# Leave it out and the first boot has nothing to turn the account on with: on
+# a headless machine firstboot.d/35redispass says so and fails, and the
+# account stays unable to authenticate, which is the state the layer was
+# published in.
+version: 1
+
+instance:
+  hostname: redis
+  fqdn: redis.example.org
+
+network:
+  # LXC: the host owns eth0 and the address comes by SLAAC from the host's
+  # /64. Switch to method static with an address once a DNS record points at
+  # it, so the address the record names never moves.
+  managed_by: host
+  interfaces:
+    eth0:
+      ipv6:
+        method: auto
+
+tls:
+  acme:
+    # Redis speaks its own protocol on 6379 and this layer serves no web page
+    # of its own. Webmin, on 12321, carries its own certificate.
+    enabled: false
+
+secrets:
+  root_password:
+    file: /etc/keel/secrets/root_password
+  db_password:
+    file: /etc/keel/secrets/db_password
+
+app:
+  options:
+    # Renders to APP_DB_USER: the ACL user the declared password belongs to.
+    # It is the account unit-redis publishes off, named here so an appliance
+    # built on this layer can see where to change it.
+    db_user: admin
+
+database:
+  server:
+    # What this machine is, which `keel inspect` reads back from the server
+    # itself (INFO replication and INFO cluster) and `keel diff` compares.
+    # standalone is the only mode this layer configures; the cloud modes of
+    # decision 0013 come in their own issue, and the vocabulary already has
+    # room for the values they need.
+    engine: redis
+    role: standalone
+    listen:
+      - ::1
+      - 127.0.0.1
+
+hub:
+  api_key: skip
+
+security:
+  alerts: skip
+  updates_at_first_boot: skip
+
+first_login_wizard: false
