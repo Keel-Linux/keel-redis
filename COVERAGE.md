@@ -55,8 +55,13 @@ there.
    is written and read back under a key.
 3. **Nothing works without the secret.** The same client, with no account and
    no password, asks for a key and must be refused with `NOPERM`.
-4. **Webmin answers over IPv6 on 12321**, and no Webmin module for Redis is
-   offered by the machine, which is checked rather than assumed.
+4. **Webmin answers over IPv6 on 12321**, and dpkg on the machine reports no
+   Webmin module for Redis, which is checked rather than assumed. It is
+   asked of dpkg and not of apt-cache: the image carries no package lists,
+   because `conf.d/zz-project-packages` removes them with the build time
+   archive, so a search here would answer nothing whatever the archive
+   holds. Whether the archive offers one has an answer only at build time,
+   and `conf.d/main` is where it is asked.
 5. **`keel inspect` reads `database.server.role` off the running server** and
    says `standalone`. This is the seam the cloud modes of decision 0013 are
    built on, and it is why the declared secret is an ACL user: `requirepass`

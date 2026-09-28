@@ -512,17 +512,24 @@ bt_role_verdict() {
 }
 
 bt_no_webmin_module_verdict() {
-    # bt_no_webmin_module_verdict OUTPUT: what apt-cache said about a Webmin
-    # module for Redis on the booted machine. Debian 13 packages none, and
-    # keel-mariadb and keel-postgresql both check theirs is installed, so
-    # the absence is checked here rather than left as a silence somebody
-    # would have to go and confirm. The day one is packaged, this fails and
-    # the build fails with it (conf.d/main).
+    # bt_no_webmin_module_verdict STATUS: what dpkg on the booted machine
+    # says about a Webmin module for Redis, which must be nothing.
+    #
+    # keel-mariadb and keel-postgresql both check that theirs is installed.
+    # Debian 13 packages no equivalent for Redis, so the absence is checked
+    # rather than left as a silence somebody would have to go and confirm.
+    #
+    # dpkg and not apt-cache, and the difference matters: the image carries
+    # no package lists at all, because conf.d/zz-project-packages removes
+    # them with the build time archive, so an apt-cache search here would
+    # answer nothing whatever the archive holds and would pass for the
+    # wrong reason. Whether the archive offers one is a question with an
+    # answer only at build time, and conf.d/main is where it is asked.
     if [ -z "$(printf '%s' "${1-}" | tr -d '[:space:]')" ]; then
-        echo "boot-test: no Webmin module for Redis is packaged, which is why none is installed"
+        echo "boot-test: no Webmin module for Redis is installed, and Debian 13 packages none"
         return 0
     fi
-    echo "boot-test: apt-cache offers a Webmin module for Redis now ('${1-}'): add it to plan/main and check it here" >&2
+    echo "boot-test: dpkg reports a Webmin module for Redis ('${1-}'), which this layer does not install" >&2
     return 1
 }
 

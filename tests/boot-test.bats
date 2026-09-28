@@ -346,16 +346,18 @@ DEF
 }
 
 @test "no_webmin_module_verdict: Debian packages none, and that is checked" {
+    # The input is a dpkg status and not an apt-cache line, because the
+    # image carries no package lists: see the comment on the function.
     run bt_no_webmin_module_verdict ""
     [ "$status" -eq 0 ]
-    [[ $output == *"no Webmin module for Redis is packaged"* ]]
+    [[ $output == *"no Webmin module for Redis is installed"* ]]
     run bt_no_webmin_module_verdict $'\n  \n'
     [ "$status" -eq 0 ]
     run bt_no_webmin_module_verdict
     [ "$status" -eq 0 ]
-    run bt_no_webmin_module_verdict "webmin-redis - Webmin module - Redis"
+    run bt_no_webmin_module_verdict "install ok installed"
     [ "$status" -eq 1 ]
-    [[ $output == *"add it to plan/main"* ]]
+    [[ $output == *"which this layer does not install"* ]]
 }
 
 @test "db_verdict: PONG passes, and every refusal redis-cli exits 0 on fails" {

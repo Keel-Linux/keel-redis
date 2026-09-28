@@ -1,3 +1,14 @@
+turnkey-redis-19.0 (3) turnkey; urgency=low
+
+  * The component is pinned at unit-redis v1.0.1, so the layer manifest
+    records "units redis@1.0.1". 1.0.0 read an INFO reply with a grep
+    anchored on a dollar, and Redis speaks CRLF: the first build of this
+    layer died in the component's own check, with a server that was up and
+    listening on both families and a message that said no Redis answered.
+    Nothing the image gets changes.
+
+ -- Keel Linux maintainers <admin@keellinux.org>  Mon, 28 Sep 2026 02:00:00 +0000
+
 turnkey-redis-19.0 (2) turnkey; urgency=low
 
   * Rebuilt as a Keel layer on core, carrying the Redis server as the

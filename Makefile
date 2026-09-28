@@ -3,7 +3,7 @@
 # turnkeylinux-apps/redis, built as a layer on core so that any appliance
 # that needs Redis is built on it instead of installing its own.
 #
-#     git clone --branch v1.0.0 \
+#     git clone --branch v1.0.1 \
 #         https://github.com/keel-linux/unit-redis.git unit.d/redis
 #     bt-layer redis --parent core
 #
