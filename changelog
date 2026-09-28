@@ -1,3 +1,29 @@
+turnkey-redis-19.0 (4) turnkey; urgency=low
+
+  * The component is pinned at unit-redis v1.0.2, and the recipe's own
+    checks are widened to the two defects that pin fixes, both found by
+    booting the layer rather than by building it.
+
+    Redis refuses a user declared twice across configuration files, so the
+    component no longer publishes an administrative account for the first
+    boot to turn on; it declares it once, at the first boot, or not at all.
+    conf.d/main checks that exactly one account is declared in the whole of
+    /etc/redis and that it is not the administrative one, because a second
+    declaration anywhere is a layer whose Redis cannot start.
+
+    And Redis opens every value its logfile setting is ever given, so
+    anything that runs the server as root during a build leaves
+    /var/log/redis/redis-server.log owned by root in a directory the redis
+    user owns, and the service fails to start on every machine built from
+    the layer. The component's conf script takes an empty one away, and
+    conf.d/main checks that the layer ships none the service could not
+    write.
+
+  * README.rst says what the layer is published without, which is now an
+    administrative account rather than one that exists and is off.
+
+ -- Keel Linux maintainers <admin@keellinux.org>  Mon, 28 Sep 2026 02:40:00 +0000
+
 turnkey-redis-19.0 (3) turnkey; urgency=low
 
   * The component is pinned at unit-redis v1.0.1, so the layer manifest

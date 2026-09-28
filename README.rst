@@ -6,14 +6,14 @@ TurnKey Linux appliances, and corresponding to the upstream appliance
 `turnkeylinux-apps/redis <https://github.com/turnkeylinux-apps/redis>`_ for
 the database half of what that appliance is::
 
-    git clone --branch v1.0.1 \
+    git clone --branch v1.0.2 \
         https://github.com/keel-linux/unit-redis.git unit.d/redis
     bt-layer redis --parent core
 
 The server comes from the ``unit.d/redis`` component: `keel-linux/unit-redis
 <https://github.com/keel-linux/unit-redis>`_ carries its plan, its overlay
 and its conf script, fab applies it, and ``bt-layer`` records it in the layer
-manifest as ``units redis@1.0.1``. Materialising ``unit.d`` from the pin is
+manifest as ``units redis@1.0.2``. Materialising ``unit.d`` from the pin is
 the assembly step decision 0010 names as work of the project and does not
 exist yet, so the clone above is that step for now; ``unit.d/`` is ignored by
 git here.
@@ -93,12 +93,14 @@ choice rather than side effects of it:
   plugin to print it out again into ``/root/redis_password.txt``. Neither
   tool is here, because neither has anything to read.
 
-Before the first boot the account is published ``off``, which authenticates
-nothing whatever is sent. That is the same reasoning as ``keel-mariadb``'s
-account with an invalid password hash: a layer is published once and reused
-by every appliance built on it, so a password chosen at build time would be
-the same password everywhere, and a random one would make the layer
-irreproducible (brief section 5.4).
+Before the first boot **the account does not exist**. ``keel-mariadb``
+publishes its account with a password hash no input produces; the same shape
+was tried here and Redis refuses it, because a user may be declared only
+once across configuration files. So the account is declared once, by the
+first boot, or not at all, and the property that mattered holds either way:
+a layer is published once and reused by every appliance built on it, so a
+password chosen at build time would be the same password everywhere, and a
+random one would make the layer irreproducible (brief section 5.4).
 
 One Redis behaviour is worth knowing before reading any of the checks:
 **redis-cli exits 0 when the server answers with an error.** A wrong password
