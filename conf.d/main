@@ -18,24 +18,44 @@
 #    take one of them away and nothing else would notice.
 grep -qx 'bind ::1 127.0.0.1' /etc/redis/redis.conf.d/10-keel-bind.conf
 grep -qx 'user default on nopass +info' /etc/redis/redis.conf.d/20-keel-acl.conf
-grep -qx 'user admin off' /etc/redis/redis.conf.d/20-keel-acl.conf
+
+# Exactly one account is declared in the whole of /etc/redis, and it is not
+# the administrative one. Redis refuses a user declared twice across
+# configuration files ("Duplicate user found. A user can only be defined
+# once in config files"), which is why the component publishes no
+# administrative account and the first boot declares it once. A second
+# declaration anywhere would be a layer whose Redis cannot start at all.
+[[ $(cat /etc/redis/redis.conf.d/*.conf | grep -c '^user ') -eq 1 ]]
+! grep -rqE '^user admin' /etc/redis/
 grep -qxF 'include /etc/redis/redis.conf.d/*.conf' /etc/redis/redis.conf
 
-# 2. No password anywhere. The whole point of the ACL account is that this
-#    layer is published with no usable credential in it: a requirepass would
-#    be the same password on every appliance built from this layer, and the
-#    account 20-keel-acl.conf publishes is off until a first boot turns it on
-#    from the instance description.
+# 2. No password anywhere, and no administrative account at all. The whole
+#    point of the ACL account is that this layer is published with no usable
+#    credential in it: a requirepass would be the same password on every
+#    appliance built from this layer, and an account that is not declared
+#    cannot authenticate until the first boot declares it from the instance
+#    description.
 ! grep -rqE '^[[:space:]]*requirepass' /etc/redis/
 ! test -e /etc/redis/redis.conf.d/50-keel-secret.conf
 
-# 3. The client is installed, because the first boot hook and `keel inspect`
+# 3. No log file the service will not be able to write. Redis opens every
+#    value its logfile setting is ever given, so anything that runs the
+#    server as root during a build leaves /var/log/redis/redis-server.log
+#    owned by root in a directory the redis user owns, and the service then
+#    fails to start with "Can't open the log file: Permission denied" on
+#    every machine built from the layer. The component's conf script takes
+#    an empty one away; this is the check that it did.
+if [ -e /var/log/redis/redis-server.log ]; then
+    [[ $(stat -c %U /var/log/redis/redis-server.log) == redis ]]
+fi
+
+# 4. The client is installed, because the first boot hook and `keel inspect`
 #    both run it. redis-server depends on it, so this is a check and not a
 #    request.
 dpkg-query -W -f '${Status}' redis-tools | grep -qx 'install ok installed'
 dpkg-query -W -f '${Status}' redis-server | grep -qx 'install ok installed'
 
-# 4. Debian 13 packages no Webmin module for Redis, which README.rst says out
+# 5. Debian 13 packages no Webmin module for Redis, which README.rst says out
 #    loud rather than leaving a reader to look for the line. The check is
 #    here so that the day one appears is the day somebody is told, rather
 #    than a panel that could have had a Redis page and quietly does not.
