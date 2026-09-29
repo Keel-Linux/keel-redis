@@ -36,15 +36,23 @@ jobs:
     # https://mirror.keellinux.org/layers, verified, assembled into a
     # scratch rootfs, booted in LXC and checked by tests/boot-test.sh.
     # Nothing is built there; the build host publishes the layer
-    # (docs/releases-host.md of the keel repository).
+    # (docs/releases-host.md of the keel repository). So what boots is the
+    # layer the mirror publishes, never this branch: a pull request that
+    # changes the recipe is not exercised by this check, which is why the
+    # reusable job is called boot-published-layer.
     #
     # test-appliance.yml targets the labels "self-hosted, keel-lxc"; a job
     # aimed at a label no runner carries stays queued until GitHub cancels
     # it after 24 hours, so the reusable workflow's contract is that
     # callers gate on the organization variable KEEL_LXC_RUNNER
-    # (docs/ci-cd.md section 5 of the keel repository). While the layer is
-    # not published the job skips with a notice and passes. This job
-    # produces the check "appliance / build-and-boot".
+    # (docs/ci-cd.md section 5 of the keel repository). This job produces
+    # the check "appliance / boot-published-layer", and while the redis layer
+    # is not on the mirror it fails, saying so: a job that pulled, verified
+    # and booted nothing used to conclude success here, which is the defect
+    # keel-linux/.github pull request 12 fixes. The way out is to publish the
+    # layer. The allow_unpublished exemption is for a repository whose first
+    # layer does not exist yet and is deliberately not used here, because
+    # this one has a recipe and a boot test and only wants its layer built.
     #
     # One node. The modes of decision 0013 are what would need two, and
     # they are not in this layer: the seam they will be built on is the

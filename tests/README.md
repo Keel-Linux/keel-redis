@@ -37,7 +37,7 @@ option.
 It builds nothing: the layers come from the mirror or from a directory
 `bt-layer` wrote, so the test needs no fab, deck or buildtasks. The
 organization's `test-appliance.yml` calls it after `keel pull` and
-`keel verify`, and the check is `appliance / build-and-boot`.
+`keel verify`, and the check is `appliance / boot-published-layer`.
 
 Two things that have cost time before and are handled in `bt_lxc_config` and
 `bt_mark_container`, both in `tests/lib/boot-test-lib.sh`:
