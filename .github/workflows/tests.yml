@@ -21,7 +21,7 @@ jobs:
   tests:
     # tests/coverage.sh measures three shell files (COVERAGE.md): the boot
     # test's library at 100 percent (187/187), bin/keel-archive-check at 100
-    # (54/54) and conf.d/zz-project-packages at 100 (29/29), over 92 bats
+    # (54/54) and conf.d/zz-project-packages at 100 (33/33), over 97 bats
     # tests. The first boot hook, its library and the component's conf
     # script are measured in keel-linux/unit-redis, which owns them. The
     # threshold is the lowest measured file and is only ever raised
