@@ -10,7 +10,7 @@
    this layer needs the client, the way keel-mariadb names mariadb-client. */
 redis-tools
 
-/* project packages, resolved from the build host's staging repository */
+/* project packages, from the Keel archive (archive.keellinux.org) */
 inithooks
 confconsole
 keel

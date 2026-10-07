@@ -9,38 +9,32 @@ acceptance test of a recipe, docs/org-plan.md section 1).
 | File | Test | Lines | Note |
 | --- | --- | --- | --- |
 | tests/lib/boot-test-lib.sh | tests/boot-test.bats (52 tests) | 100 percent (187/187) under kcov | argument parsing, address discovery, deadlines, the container marks, the client calls, the four verdicts, the role keel inspect reports, and the Webmin and diff verdicts |
-| bin/keel-archive-check | tests/archive-check.bats (27 tests) | 100 percent (54/54) under kcov | the build time check that the archive copy in the build tree is the live archive, verified with gpgv and never trusted |
-| conf.d/zz-project-packages | tests/project-packages.bats (15 tests) | 100 percent (33/33) under kcov | the build time check that each project package is the candidate of the archive, and a project build; then that no apt file of the image names the build time archive |
+| bin/keel-project-packages | tests/project-packages.bats (6 tests) | 100 percent (32/32) under kcov | inithooks, confconsole and keel are installed at apt's candidate, and the candidate is the Keel archive's in the suite of the track (KEEL_APT_TRACK); a version below the candidate, another source or an unknown track fails |
 | Makefile, README.rst | tests/unit-pin.bats (3 tests) | static | the unit-redis tag cloned is the same in both, matches the manifest entry, and carries 1.0.3's first boot fix |
-| overlay, conf.d/main | tests/apt-files.bats (3 tests) | static | no Keel source or 1001 pin in the overlay; the build time pin on the staging Label is written before the upgrade |
+| Makefile, plan, overlay, conf.d/main | tests/apt-files.bats (6 tests) | static | no Keel source or 1001 pin in the overlay; no staging source, pin, keyring or archive copy anywhere; the upgrade from the archive, then the check, which enters the tree before the conf scripts and leaves it |
 | conf.d/main | the build | integration only | build time script, 0004 pragmatic limits |
 | tests/boot-test.sh | itself | integration only | the thin main of the acceptance test: keel and LXC as root |
 | the first boot hook, its library, the component's conf | keel-linux/unit-redis | not this repository | 100 percent over 65 bats tests there |
 
 Total over the three measured shell files: **100 percent (270/270)**,
-92 bats tests. `tests/coverage.sh` fails below `COVERAGE_THRESHOLD`, which
+67 bats tests. `tests/coverage.sh` fails below `COVERAGE_THRESHOLD`, which
 the workflow sets to 100, the measured number. It is only ever raised
 (decision 0006).
 
     $ COVERAGE_THRESHOLD=100 tests/coverage.sh
     kcov line coverage (threshold 100 percent):
-     100.00  33/33  zz-project-packages
      100.00  187/187  boot-test-lib.sh
-     100.00  54/54  keel-archive-check
+     100.00  32/32  keel-project-packages
 
 This layer writes no first boot hook of its own, which is the difference
 between its coverage table and keel-mariadb's or keel-postgresql's. The hook
 that matters is `firstboot.d/35redispass` of the `unit.d/redis` component,
 and it is measured in the repository that owns it. What this recipe writes
-is the boot test's logic and the two build time checks, and all three are at
-100 percent.
+is the boot test's logic and the build time check of the project packages,
+and both are at 100 percent.
 
-`bin/keel-archive-check` and `conf.d/zz-project-packages` are the fifth copy
-of themselves in this organization, which is what tracker#8 is for: they
-belong in `keel-linux/common` next to the removelist that already undoes
-their work for every recipe at once. Copied here unchanged rather than
-refactored, so that this layer lands with the archive verified rather than
-waiting for a five repository change.
+`bin/keel-project-packages` is the same file in keel-mariadb, keel-postgresql
+and this recipe; tracker#8 is where a shared home for it belongs.
 
 ## What the boot test proves, line by line
 
@@ -64,8 +58,7 @@ stands today (keel-linux/.github pull request 12).
 4. **Webmin answers over IPv6 on 12321**, and dpkg on the machine reports no
    Webmin module for Redis, which is checked rather than assumed. It is
    asked of dpkg and not of apt-cache: the image carries no package lists,
-   because `conf.d/zz-project-packages` removes them with the build time
-   archive, so a search here would answer nothing whatever the archive
+   because `conf.d/main` removes them at the end of the build, so a search here would answer nothing whatever the archive
    holds. Whether the archive offers one has an answer only at build time,
    and `conf.d/main` is where it is asked.
 5. **`keel inspect` reads `database.server.role` off the running server** and

@@ -30,7 +30,7 @@ done
 report="${COVERAGE_DIR:-$(mktemp -d)}"
 # The include pattern is the whitelist, so no exclude pattern is needed; an
 # exclude of /tests/ would drop tests/lib/boot-test-lib.sh with it.
-kcov --include-pattern=/tests/lib/boot-test-lib.sh,/bin/keel-archive-check,/conf.d/zz-project-packages \
+kcov --include-pattern=/tests/lib/boot-test-lib.sh,/bin/keel-project-packages \
     "$report" bats "$here"
 
 json="$(find "$report" -mindepth 2 -maxdepth 2 -name coverage.json -not -path "*/kcov-merged/*" | head -1)"

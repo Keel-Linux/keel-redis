@@ -66,54 +66,43 @@ if apt-cache show webmin-redis > /dev/null 2>&1; then
 fi
 
 # fab-plan-resolve keeps a package the parent layer already carries at the
-# parent's version, so the two core packages are upgraded here from the
-# build time source (keel, new in the plan, was installed from it already).
+# parent's version, so the project's packages are upgraded here, from the
+# Keel archive the parent layer names (overlays/turnkey.d/keel-apt of
+# common; trixie-testing as well when the build has KEEL_APT_TRACK=testing).
 #
 # The overlay of this layer ships /etc/confconsole/services.txt, which is a
 # conffile of confconsole, so dpkg sees it as locally modified and asks what
 # to do with it. The conf script runs with stdin closed, dpkg reads end of
 # file at the prompt and leaves confconsole "install ok unpacked", which
 # fails this script. Keep the overlay's file without asking.
-#
-# The build time archive has to win over every other source here: a
-# bootstrap from before Keel-Linux/common#30 pins TurnKey's archive at 999.
-# It used to win through the overlay's /etc/apt/preferences.d/keel at 1001,
-# which then shipped in the image and downgraded every package newer than the
-# archive's (tracker#23). This pin names the staging distribution by its
-# Label, exists only during the build and goes with the build time source
-# (conf.d/zz-project-packages).
-printf 'Package: *\nPin: release l=Keel Linux staging\nPin-Priority: 1001\n' \
-    > /etc/apt/preferences.d/keel-staging
 export DEBIAN_FRONTEND=noninteractive
+apt-get update --error-on=any
 apt-get install -y --only-upgrade \
     -o Dpkg::Options::=--force-confdef \
     -o Dpkg::Options::=--force-confold \
-    inithooks confconsole
+    inithooks confconsole keel
 
 # A half configured package keeps its new version, so check the state too.
 [[ $(dpkg-query -W -f '${Status}\n' inithooks confconsole keel \
     | grep -c '^install ok installed$') -eq 3 ]]
 
-# What is installed is then checked against the archive rather than against a
-# literal version, which is conf.d/zz-project-packages, the last script of
-# this build. A literal passes whenever the build happens to read a stale
-# index, which is how the forum layer of 2026-09-26 shipped the previous
-# morning's inithooks and confconsole with a green build (docs/traps.md).
-#
-# keel 0.3.5 is what this layer is published to carry: `keel inspect` reads
-# database.server.role from INFO replication and INFO cluster there, which is
-# what the boot test checks and what the console's cloud modes will be built
-# on. A layer carrying keel 0.2.1 answers nothing for the database section
-# and the boot test's inspect check fails, so the floor is here as well as in
-# the archive check, because they fail for different reasons: this one says
-# the version is too old, that one says the index was stale.
-while read -r package floor; do
-    installed=$(dpkg-query -W -f '${Version}' "$package")
-    dpkg --compare-versions "$installed" ge "$floor" \
-        || { echo "$package $installed is older than $floor" >&2; exit 1; }
-done <<EOF
-inithooks 2.3.6+keel4
-confconsole 2.2.3+keel2
-keel 0.3.5
-EOF
+# Not a floor and not a literal: each of the three is installed at the
+# version the Keel archive offers as its candidate, from the suite of the
+# track this build reads. A build that read a stale index, or any other
+# source, stops here instead of shipping a layer that is not what the
+# archive says it is. bin/keel-project-packages was copied into the tree
+# for this (Makefile, root.patched/pre) and leaves with it.
+/usr/local/lib/keel-build/keel-project-packages inithooks confconsole keel
+rm -rf /usr/local/lib/keel-build
 dpkg-query -W -f '${Package} ${Version} ${Status}\n' inithooks confconsole keel
+
+# No build time package source exists any more, and none may reach the
+# image: nothing the image keeps may name the build host's old staging
+# archive, its pin or its keyring, and the apt lists are not shipped.
+rm -rf /var/lib/apt/lists/*
+if grep -rlsE 'trixie-staging|/srv/keel-apt|l=Keel Linux staging|keel-staging' /etc/apt/sources.list \
+    /etc/apt/sources.list.d /etc/apt/preferences /etc/apt/preferences.d /etc/apt/keyrings; then
+    echo "the apt files above name the build host's staging archive" >&2
+    exit 1
+fi
+[ ! -e /usr/local/lib/keel-build ]

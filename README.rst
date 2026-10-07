@@ -36,11 +36,10 @@ What is in it
 -------------
 
 ======================================  ====================================
-``Makefile``                            the component under ``unit.d``, this overlay, the firewall ports, the verified build time archive
+``Makefile``                            the component under ``unit.d``, this overlay, the firewall ports, the project package check copied in for the build
 ``plan/main``                           the client and the project packages; the server is the component's plan
-``conf.d/main``                         the checks on what the component did, and the project package upgrade
-``conf.d/zz-project-packages``          what is installed, checked against the archive rather than against a literal version
-``bin/keel-archive-check``              the copy of the project archive in the build tree, proved to be the live one and verified with gpgv
+``conf.d/main``                         the checks on what the component did, the project package upgrade from the Keel archive and its check
+``bin/keel-project-packages``           each project package installed at apt's candidate, from the Keel archive, in the track's suite
 ``keel/instance.example.yaml``          the instance description an operator starts from
 ``tests/``                              bats for the shell, ``boot-test.sh`` for the machine
 ======================================  ====================================
