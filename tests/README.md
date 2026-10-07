@@ -9,15 +9,15 @@ Two gates, and they need different machines.
 
 Runs the whole bats suite under kcov and fails below the threshold. Nothing
 in it needs root, a network, a server or LXC: `lxc-info` is a stub first in
-PATH, the clock and sleep are functions, and the two build time checks run
-against scratch trees. The workflow calls it through the organization's
+PATH, the clock and sleep are functions, and the build time check runs
+against stubbed apt output. The workflow calls it through the organization's
 `test-shell.yml` and the check is `tests / coverage`.
 
 | File | What it covers |
 | --- | --- |
 | `boot-test.bats` | the logic of the boot test: argument parsing, address discovery, deadlines, the container marks, the client calls, the verdicts and the role reading |
-| `archive-check.bats` | `bin/keel-archive-check`: the copy of the project archive proved against the live one and verified with gpgv |
-| `project-packages.bats` | `conf.d/zz-project-packages`: what is installed checked against what the archive offers |
+| `apt-files.bats` | the recipe's apt files: no Keel source or pin in the overlay, no staging source anywhere, the upgrade from the archive and its check |
+| `project-packages.bats` | `bin/keel-project-packages`: each project package installed at apt's candidate, from the Keel archive, in the track's suite |
 | `unit-pin.bats` | the unit-redis tag the Makefile and README.rst clone: the same in both, the manifest entry README.rst names, and no older than 1.0.3 |
 
 The first boot hook, its library and the component's conf script are not
