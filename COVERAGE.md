@@ -11,6 +11,7 @@ acceptance test of a recipe, docs/org-plan.md section 1).
 | tests/lib/boot-test-lib.sh | tests/boot-test.bats (52 tests) | 100 percent (187/187) under kcov | argument parsing, address discovery, deadlines, the container marks, the client calls, the four verdicts, the role keel inspect reports, and the Webmin and diff verdicts |
 | bin/keel-archive-check | tests/archive-check.bats (27 tests) | 100 percent (54/54) under kcov | the build time check that the archive copy in the build tree is the live archive, verified with gpgv and never trusted |
 | conf.d/zz-project-packages | tests/project-packages.bats (15 tests) | 100 percent (33/33) under kcov | the build time check that each project package is the candidate of the archive, and a project build; then that no apt file of the image names the build time archive |
+| Makefile, README.rst | tests/unit-pin.bats (3 tests) | static | the unit-redis tag cloned is the same in both, matches the manifest entry, and carries 1.0.3's first boot fix |
 | overlay, conf.d/main | tests/apt-files.bats (3 tests) | static | no Keel source or 1001 pin in the overlay; the build time pin on the staging Label is written before the upgrade |
 | conf.d/main | the build | integration only | build time script, 0004 pragmatic limits |
 | tests/boot-test.sh | itself | integration only | the thin main of the acceptance test: keel and LXC as root |

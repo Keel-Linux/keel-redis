@@ -6,14 +6,14 @@ TurnKey Linux appliances, and corresponding to the upstream appliance
 `turnkeylinux-apps/redis <https://github.com/turnkeylinux-apps/redis>`_ for
 the database half of what that appliance is::
 
-    git clone --branch v1.0.2 \
+    git clone --branch v1.0.3 \
         https://github.com/keel-linux/unit-redis.git unit.d/redis
     bt-layer redis --parent core
 
 The server comes from the ``unit.d/redis`` component: `keel-linux/unit-redis
 <https://github.com/keel-linux/unit-redis>`_ carries its plan, its overlay
 and its conf script, fab applies it, and ``bt-layer`` records it in the layer
-manifest as ``units redis@1.0.2``. Materialising ``unit.d`` from the pin is
+manifest as ``units redis@1.0.3``. Materialising ``unit.d`` from the pin is
 the assembly step decision 0010 names as work of the project and does not
 exist yet, so the clone above is that step for now; ``unit.d/`` is ignored by
 git here.
