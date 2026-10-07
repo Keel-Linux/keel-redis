@@ -1,3 +1,19 @@
+turnkey-redis-19.0 (6) turnkey; urgency=low
+
+  * The component is pinned at unit-redis v1.0.3. unit-redis main had been
+    at 1.0.3 since 2026-09-30 without a tag, so this recipe kept cloning
+    v1.0.2, whose bin/redispass.py drew its password box into the first
+    boot hook's command substitution: an interactive first boot froze at
+    the Redis password. v1.0.3 is tagged now and the Makefile and
+    README.rst clone it; the layer manifest records "units redis@1.0.3".
+    Found by the 2026-10-03 audit of the data service layers.
+
+  * tests/unit-pin.bats holds the pin: the Makefile and README.rst clone
+    the same tag, README.rst names its manifest entry, and the tag is no
+    older than 1.0.3.
+
+ -- Marcos Mendez <mendez.foto@gmail.com>  Wed, 07 Oct 2026 12:00:00 +0000
+
 turnkey-redis-19.0 (5) turnkey; urgency=low
 
   * The overlay no longer ships /etc/apt/sources.list.d/keel.sources

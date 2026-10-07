@@ -18,6 +18,7 @@ against scratch trees. The workflow calls it through the organization's
 | `boot-test.bats` | the logic of the boot test: argument parsing, address discovery, deadlines, the container marks, the client calls, the verdicts and the role reading |
 | `archive-check.bats` | `bin/keel-archive-check`: the copy of the project archive proved against the live one and verified with gpgv |
 | `project-packages.bats` | `conf.d/zz-project-packages`: what is installed checked against what the archive offers |
+| `unit-pin.bats` | the unit-redis tag the Makefile and README.rst clone: the same in both, the manifest entry README.rst names, and no older than 1.0.3 |
 
 The first boot hook, its library and the component's conf script are not
 here. They belong to `keel-linux/unit-redis` and are measured there.
