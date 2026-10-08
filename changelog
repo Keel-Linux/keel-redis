@@ -1,3 +1,15 @@
+turnkey-redis-19.0 (8) turnkey; urgency=medium
+
+  * The component is pinned at unit-redis v1.0.4. Redis 19.0-7 did not
+    start: the ACL fragment unit-redis 1.0.3's first boot hook writes,
+    /etc/redis/redis.conf.d/50-keel-secret.conf, had a line of its comment
+    without the "#", and redis-server refused the file (Keel-Linux/
+    unit-redis#8). 19.0-7 is withdrawn. The Makefile and README.rst clone
+    v1.0.4; the layer manifest records "units redis@1.0.4".
+  * tests/unit-pin.bats holds the pin no older than 1.0.4.
+
+ -- Keel Linux maintainers <admin@keellinux.org>  Thu, 08 Oct 2026 03:00:00 +0000
+
 turnkey-redis-19.0 (7) turnkey; urgency=medium
 
   * The project's packages (inithooks, confconsole, keel) come from the

@@ -18,7 +18,7 @@ against stubbed apt output. The workflow calls it through the organization's
 | `boot-test.bats` | the logic of the boot test: argument parsing, address discovery, deadlines, the container marks, the client calls, the verdicts and the role reading |
 | `apt-files.bats` | the recipe's apt files: no Keel source or pin in the overlay, no staging source anywhere, the upgrade from the archive and its check |
 | `project-packages.bats` | `bin/keel-project-packages`: each project package installed at apt's candidate, from the Keel archive, in the track's suite |
-| `unit-pin.bats` | the unit-redis tag the Makefile and README.rst clone: the same in both, the manifest entry README.rst names, and no older than 1.0.3 |
+| `unit-pin.bats` | the unit-redis tag the Makefile and README.rst clone: the same in both, the manifest entry README.rst names, and no older than 1.0.4 |
 
 The first boot hook, its library and the component's conf script are not
 here. They belong to `keel-linux/unit-redis` and are measured there.
