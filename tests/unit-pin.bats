@@ -6,13 +6,15 @@
 # the same thing, and the pin cannot fall behind the first fix the layer
 # depends on.
 #
-# unit-redis 1.0.3 is that fix: bin/redispass.py draws its password box on
-# the terminal. Up to 1.0.2 an interactive first boot froze at the Redis
-# password, with the box drawn into the hook's command substitution.
+# unit-redis 1.0.4 is that fix: the ACL fragment its first boot hook writes
+# is valid Redis configuration. 1.0.3 wrote a line of its comment without
+# the "#", and redis-server refused to start on the published 19.0-7.
+# (1.0.3 itself fixed the first boot freeze at the Redis password, where
+# bin/redispass.py drew its box into the hook's command substitution.)
 
 setup() {
     REPO="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
-    MINIMUM=1.0.3
+    MINIMUM=1.0.4
 }
 
 # clone_tag FILE: the tag of the unit-redis clone line FILE documents
@@ -34,7 +36,7 @@ clone_tag() {
     [ "$(printf '%s\n' "${lines[@]}" | sort -u)" = "units redis@$tag" ]
 }
 
-@test "the pin carries the first boot freeze fix of unit-redis 1.0.3" {
+@test "the pin carries the ACL fragment fix of unit-redis 1.0.4" {
     tag=$(clone_tag "$REPO/Makefile")
     [ "$(printf '%s\n%s\n' "$MINIMUM" "$tag" | sort -V | head -n 1)" = "$MINIMUM" ]
 }
