@@ -1,3 +1,10 @@
+turnkey-redis-19.0 (9) turnkey; urgency=medium
+
+  * Release of 2026-10-09 (step 12): rebuilt on the lean Core 19.0-10
+    (handbook decision 0052) with keel 0.23.13.
+
+ -- KeelLinux maintainers <admin@keellinux.org>  Fri, 09 Oct 2026 22:45:00 +0000
+
 turnkey-redis-19.0 (8) turnkey; urgency=medium
 
   * The component is pinned at unit-redis v1.0.4. Redis 19.0-7 did not
