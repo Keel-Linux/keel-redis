@@ -1,0 +1,25 @@
+manifest_version: 1
+kind: appliance
+name: redis
+title: Keel Redis
+summary: The Redis data service on Keel Core, alone or as a replicated pair (0047, 0049)
+base: core
+# The overlays are Core's, inherited with their states (installer, wireguard,
+# etcd, crowdsec, vip): this layer adds none, and a spec that names it writes
+# all five out (0027).
+processes:
+  - name: redis
+    unit: redis-server.service
+    # loopback as the component ships it; on a pair, database.server.listen
+    # adds the node's overlay address and the VIP, so 6379 is a mesh port:
+    # on the WireGuard interface, never on the uplink.
+    listen: [{port: 6379, protocol: tcp, expose: mesh}]
+checks:
+  - {name: redis, process: redis, type: protocol, protocol: redis,
+     address: loopback, port: 6379, on_failure: restart}
+secrets:
+  - name: db_password
+    description: The ACL user "admin" the first boot makes, from DB_PASS
+    generate: allowed
+    # a replica authenticates against the primary: a pair holds one value
+    shared: true

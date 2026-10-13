@@ -1,3 +1,15 @@
+turnkey-redis-19.0 (10) turnkey; urgency=low
+
+  * Ship the appliance manifest usr/share/keel/appliances/redis.yaml in
+    the layer overlay, so a spec can name appliance redis and the pair
+    flow (appliance.vip, keel vip pair) is reachable on a pristine image.
+    Found by the 2026-10-13 BR1+BR2 pair test: the image carried only
+    core.yaml. The shape mirrors mariadb.yaml; the schema check is
+    keel.manifest's own, and tests/manifest.bats keeps the file from
+    drifting in this repository.
+
+ -- KeelLinux maintainers <admin@keellinux.org>  Mon, 13 Oct 2026 13:50:00 +0000
+
 turnkey-redis-19.0 (9) turnkey; urgency=medium
 
   * Release of 2026-10-09 (step 12): rebuilt on the lean Core 19.0-10
