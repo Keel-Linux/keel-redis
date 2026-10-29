@@ -1,3 +1,57 @@
+turnkey-redis-19.0 (10) turnkey; urgency=low
+
+  * Ship the appliance manifest usr/share/keel/appliances/redis.yaml in
+    the layer overlay, so a spec can name appliance redis and the pair
+    flow (appliance.vip, keel vip pair) is reachable on a pristine image.
+    Found by the 2026-10-13 BR1+BR2 pair test: the image carried only
+    core.yaml. The shape mirrors mariadb.yaml; the schema check is
+    keel.manifest's own, and tests/manifest.bats keeps the file from
+    drifting in this repository.
+
+ -- KeelLinux maintainers <admin@keellinux.org>  Mon, 13 Oct 2026 13:50:00 +0000
+
+turnkey-redis-19.0 (9) turnkey; urgency=medium
+
+  * Release of 2026-10-09 (step 12): rebuilt on the lean Core 19.0-10
+    (handbook decision 0052) with keel 0.23.13.
+
+ -- KeelLinux maintainers <admin@keellinux.org>  Fri, 09 Oct 2026 22:45:00 +0000
+
+turnkey-redis-19.0 (8) turnkey; urgency=medium
+
+  * The component is pinned at unit-redis v1.0.4. Redis 19.0-7 did not
+    start: the ACL fragment unit-redis 1.0.3's first boot hook writes,
+    /etc/redis/redis.conf.d/50-keel-secret.conf, had a line of its comment
+    without the "#", and redis-server refused the file (Keel-Linux/
+    unit-redis#8). 19.0-7 is withdrawn. The Makefile and README.rst clone
+    v1.0.4; the layer manifest records "units redis@1.0.4".
+  * tests/unit-pin.bats holds the pin no older than 1.0.4.
+
+ -- Keel Linux maintainers <admin@keellinux.org>  Thu, 08 Oct 2026 03:00:00 +0000
+
+turnkey-redis-19.0 (7) turnkey; urgency=medium
+
+  * The project's packages (inithooks, confconsole, keel) come from the
+    Keel archive, archive.keellinux.org, like every other Keel package,
+    through the source and the 990 pin the parent layer carries
+    (Keel-Linux/common#30; trixie-testing as well with KEEL_APT_TRACK=
+    testing, common#32). The build host's staging archive is gone from the
+    recipe: the Makefile no longer copies it into the bootstrap, and
+    conf.d/main no longer pins it. It held inithooks 2.3.6+keel5,
+    confconsole 2.2.3+keel2 and keel 0.3.5, and its pin at 1001 would have
+    downgraded the layer to them. bin/keel-archive-check and
+    conf.d/zz-project-packages, which checked the build against that copy,
+    go with it.
+  * conf.d/main upgrades the three from the archive and then proves each is
+    installed at apt's candidate, from the Keel archive, in the suite of the
+    track (bin/keel-project-packages, copied into the tree for the build
+    only, the same file as in keel-mariadb and keel-postgresql), in place
+    of the version floors. The build fails if any apt file of the image
+    still names the staging archive. tests/apt-files.bats and
+    tests/project-packages.bats check the recipe.
+
+ -- Keel Linux maintainers <admin@keellinux.org>  Wed, 07 Oct 2026 22:37:29 +0000
+
 turnkey-redis-19.0 (6) turnkey; urgency=low
 
   * The component is pinned at unit-redis v1.0.3. unit-redis main had been

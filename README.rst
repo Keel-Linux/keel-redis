@@ -6,14 +6,14 @@ TurnKey Linux appliances, and corresponding to the upstream appliance
 `turnkeylinux-apps/redis <https://github.com/turnkeylinux-apps/redis>`_ for
 the database half of what that appliance is::
 
-    git clone --branch v1.0.3 \
+    git clone --branch v1.0.4 \
         https://github.com/keel-linux/unit-redis.git unit.d/redis
     bt-layer redis --parent core
 
 The server comes from the ``unit.d/redis`` component: `keel-linux/unit-redis
 <https://github.com/keel-linux/unit-redis>`_ carries its plan, its overlay
 and its conf script, fab applies it, and ``bt-layer`` records it in the layer
-manifest as ``units redis@1.0.3``. Materialising ``unit.d`` from the pin is
+manifest as ``units redis@1.0.4``. Materialising ``unit.d`` from the pin is
 the assembly step decision 0010 names as work of the project and does not
 exist yet, so the clone above is that step for now; ``unit.d/`` is ignored by
 git here.
@@ -36,11 +36,10 @@ What is in it
 -------------
 
 ======================================  ====================================
-``Makefile``                            the component under ``unit.d``, this overlay, the firewall ports, the verified build time archive
+``Makefile``                            the component under ``unit.d``, this overlay, the firewall ports, the project package check copied in for the build
 ``plan/main``                           the client and the project packages; the server is the component's plan
-``conf.d/main``                         the checks on what the component did, and the project package upgrade
-``conf.d/zz-project-packages``          what is installed, checked against the archive rather than against a literal version
-``bin/keel-archive-check``              the copy of the project archive in the build tree, proved to be the live one and verified with gpgv
+``conf.d/main``                         the checks on what the component did, the project package upgrade from the Keel archive and its check
+``bin/keel-project-packages``           each project package installed at apt's candidate, from the Keel archive, in the track's suite
 ``keel/instance.example.yaml``          the instance description an operator starts from
 ``tests/``                              bats for the shell, ``boot-test.sh`` for the machine
 ======================================  ====================================

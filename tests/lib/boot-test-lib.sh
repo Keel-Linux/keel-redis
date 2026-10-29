@@ -520,8 +520,8 @@ bt_no_webmin_module_verdict() {
     # rather than left as a silence somebody would have to go and confirm.
     #
     # dpkg and not apt-cache, and the difference matters: the image carries
-    # no package lists at all, because conf.d/zz-project-packages removes
-    # them with the build time archive, so an apt-cache search here would
+    # no package lists at all, because conf.d/main removes them at the end
+    # of the build, so an apt-cache search here would
     # answer nothing whatever the archive holds and would pass for the
     # wrong reason. Whether the archive offers one is a question with an
     # answer only at build time, and conf.d/main is where it is asked.
