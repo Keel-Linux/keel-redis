@@ -1,3 +1,12 @@
+turnkey-redis-19.0 (12) turnkey; urgency=medium
+
+  * The manifest says simple is the only installation mode (handbook
+    decision 0076): modes: [simple]. The Mode screen of the first boot
+    offers only the modes an appliance allows. The image carries keel
+    0.23.83, the first keel that reads the key.
+
+ -- KeelLinux maintainers <admin@keellinux.org>  Thu, 05 Nov 2026 23:38:21 +0000
+
 turnkey-redis-19.0 (11) turnkey; urgency=medium
 
   * Stable 1 refresh of 2026-10-30 (decision 0073). The image is built again

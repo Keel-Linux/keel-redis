@@ -4,6 +4,11 @@ name: redis
 title: Keel Redis
 summary: The Redis data service on Keel Core, alone or as a replicated pair (0047, 0049)
 base: core
+# The installation modes of 0028 this appliance allows (0076): simple only.
+# Redis on a pair is out of scope until the first application that needs it
+# decides how it replicates (0068, section 5), so the Mode screen of the first
+# boot offers no cloud mode (keel 0.23.83 reads this key).
+modes: [simple]
 # The overlays are Core's, inherited with their states (installer, wireguard,
 # etcd, crowdsec, vip): this layer adds none, and a spec that names it writes
 # all five out (0027).
