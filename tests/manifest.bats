@@ -35,3 +35,7 @@ MANIFEST=overlay/usr/share/keel/appliances/redis.yaml
     run ! grep -q $'\t' "$MANIFEST"
     run ! grep -q $'\r' "$MANIFEST"
 }
+
+@test "manifest: simple is the only installation mode (0076)" {
+    grep -qx 'modes: \[simple\]' "$MANIFEST"
+}
