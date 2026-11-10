@@ -126,7 +126,7 @@ assert "mode" not in [q["id"] for q in d["questions"]], "no Mode screen comes fo
 PY
 }
 
-@test "manifest: the example spec and the boot test's spec hold against it, with no warning" {
+@test "manifest: the example spec holds against it, and the boot test's spec too, with no warning" {
     # keel takes a spec that names no appliance with no check of the
     # manifests, and the example then named app.options.db_user, which no
     # manifest of the chain declares: keel refuses it when the spec names
@@ -142,8 +142,8 @@ PY
     done
 }
 
-@test "manifest: every spec names the redis appliance, its mode and the five overlays of Core, and no option" {
-    for spec in keel/instance.example.yaml tests/instance.yaml; do
+@test "manifest: the example names the redis appliance, its mode and the five overlays of Core, and no option" {
+    for spec in keel/instance.example.yaml; do
         python3 - "$spec" <<'PY'
 import sys, yaml
 d = yaml.safe_load(open(sys.argv[1]))
@@ -173,4 +173,14 @@ PY
     grep -qF 'keel manifest show --resolved redis' tests/commission.yaml
     run ! grep -qF 'monit -B summary' tests/commission.yaml
     run ! grep -qF 'keel-manifest.conf' tests/commission.yaml
+}
+
+@test "manifest: the spec of the boot test names no appliance and no option: the host of the test validates it" {
+    # the boot test applies its spec with the keel of the CI host, which has
+    # no manifest of redis: "appliance.name: redis is not an installed
+    # appliance under /usr/share/keel" (CI of this repository, 2026-11-10;
+    # keel-postgresql has the same rule)
+    run ! grep -qE '^(appliance|installation|overlays):' tests/instance.yaml
+    run ! grep -q 'db_user' tests/instance.yaml
+    grep -q '^  db_password:' tests/instance.yaml
 }

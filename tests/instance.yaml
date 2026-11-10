@@ -26,22 +26,9 @@ tls:
   acme:
     enabled: false
 
-appliance:
-  name: redis
-
-installation:
-  # the one mode the manifest allows (modes: [simple], decision 0076)
-  mode: simple
-
-# Every overlay of the chain is written out (decisions 0027 and 0041):
-# those of Core, as this layer adds none.
-overlays:
-  installer: enabled
-  wireguard: disabled
-  etcd: disabled
-  crowdsec: disabled
-  vip: disabled
-
+# No appliance, mode or overlays: the boot test applies this spec with the
+# keel of the CI host, which has no manifest of redis (tests/manifest.bats).
+# No app.options either: the ACL user is admin, the default of unit-redis.
 secrets:
   root_password:
     file: /etc/keel/secrets/root_password

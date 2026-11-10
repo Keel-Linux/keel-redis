@@ -15,11 +15,13 @@ turnkey-redis-19.0 (13) turnkey; urgency=medium
     item 6), and Keel Core has no web shell on 12320. The services screen
     of confconsole no longer names a web shell. tests/firewall.bats holds
     both, as in keel-mariadb.
-  * keel/instance.example.yaml and the boot test's spec name the appliance
-    redis, installation.mode simple and the five overlays of Core, and no
+  * keel/instance.example.yaml names the appliance redis,
+    installation.mode simple and the five overlays of Core, and no
     app.options.db_user: no manifest of the chain declares that option, so
-    keel refused a description that named redis. The ACL user is admin,
-    the default of unit-redis. tests/manifest.bats holds both specs
+    keel refused a description that named redis. The boot test's spec
+    names no option either, and no appliance: the keel of the CI host
+    validates it, and that host has no manifest of redis. The ACL user is
+    admin, the default of unit-redis. tests/manifest.bats holds the specs
     against keel's validator when KEEL_SRC is set.
 
  -- KeelLinux maintainers <admin@keellinux.org>  Tue, 10 Nov 2026 13:30:00 +0000
