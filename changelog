@@ -23,6 +23,11 @@ turnkey-redis-19.0 (13) turnkey; urgency=medium
     validates it, and that host has no manifest of redis. The ACL user is
     admin, the default of unit-redis. tests/manifest.bats holds the specs
     against keel's validator when KEEL_SRC is set.
+  * The component is pinned at unit-redis v1.0.5. Its 35redispass leaves
+    the password question to keel-init when nobody can answer the console.
+    With v1.0.4 the first boot of a container that nobody watches wrote
+    "ERR: [35redispass] failed" in the inithooks log. tests/unit-pin.bats
+    holds the pin no older than 1.0.5.
 
  -- KeelLinux maintainers <admin@keellinux.org>  Tue, 10 Nov 2026 13:30:00 +0000
 

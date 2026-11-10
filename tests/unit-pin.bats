@@ -11,10 +11,15 @@
 # the "#", and redis-server refused to start on the published 19.0-7.
 # (1.0.3 itself fixed the first boot freeze at the Redis password, where
 # bin/redispass.py drew its box into the hook's command substitution.)
+#
+# unit-redis 1.0.5 is the least for the commissioning contract (decision
+# 0075): 35redispass leaves its question to keel-init when nobody can answer
+# the console. With 1.0.4 the first boot of the lxc-interactive pass writes
+# "ERR: [35redispass] failed" in the inithooks log.
 
 setup() {
     REPO="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
-    MINIMUM=1.0.4
+    MINIMUM=1.0.5
 }
 
 # clone_tag FILE: the tag of the unit-redis clone line FILE documents
@@ -36,7 +41,7 @@ clone_tag() {
     [ "$(printf '%s\n' "${lines[@]}" | sort -u)" = "units redis@$tag" ]
 }
 
-@test "the pin carries the ACL fragment fix of unit-redis 1.0.4" {
+@test "the pin carries the deferred password question of unit-redis 1.0.5" {
     tag=$(clone_tag "$REPO/Makefile")
     [ "$(printf '%s\n%s\n' "$MINIMUM" "$tag" | sort -V | head -n 1)" = "$MINIMUM" ]
 }
