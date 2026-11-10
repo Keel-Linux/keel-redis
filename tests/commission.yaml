@@ -102,15 +102,16 @@ proofs:
   - secret: root
     kind: command
     run: 'test "$(ss -Hltn "sport = :6379" | awk "{print \$4}" | LC_ALL=C sort | tr "\n" " ")" = "127.0.0.1:6379 [::1]:6379 "'
-  # root 4: Monit includes the checks that keel derives from the manifests,
-  # and when no check is "Initializing" (6 min at most), each one is OK.
-  # Two of them are the process and the check of redis.yaml:
-  # keel-unit-redis and keel-check-redis (redis-cli INFO on [::1]:6379,
-  # 19.0-13). "monit summary" needs the unix socket that keel writes in
-  # /etc/monit/conf.d/keel.conf when the monitor is on.
+  # root 4: the check of redis.yaml works. keel prints the check that the
+  # manifests of the image resolve to (keel manifest show --resolved
+  # redis): it is a command (redis-cli INFO on [::1]:6379, 19.0-13), the
+  # command exits 0, and the check is not Monit's redis protocol test,
+  # which sends PING that the default account may not run. The proof does
+  # not ask Monit: a single node has a monitor only when its spec turns one
+  # on with a channel (decision 0021), and the passes declare none.
   - secret: root
     kind: command
-    run: 'test "$(readlink /etc/monit/conf.d/keel-manifest.conf)" = /etc/keel/monit/keel-manifest.conf && n=$(sed -n "s/^check [a-z]* \(keel-[a-z0-9-]*\) .*/\1/p" /etc/keel/monit/keel-manifest.conf) && echo "$n" | grep -qx keel-unit-redis && echo "$n" | grep -qx keel-check-redis && for i in $(seq 36); do s=$(monit -B summary) || exit 1; echo "$s" | grep -q " Initializing " || break; sleep 10; done && for x in $n; do echo "$s" | grep -qE "^ *$x +OK( |$)" || exit 1; done'
+    run: 't=$(keel manifest show --resolved redis) || exit 1; ! echo "$t" | grep -qE "^[|] redis [|] .* [|] redis (loopback|mesh) port 6379 [|]" || exit 1; ! grep -qE "protocol: *redis" /usr/share/keel/appliances/redis.yaml || exit 1; c=$(echo "$t" | sed -n "s/^[|] redis [|] redis [|] redis [|] command \(\/[^|]*[^ |]\) [|] .*/\1/p"); test -n "$c" || exit 1; $c >/dev/null 2>&1'
   # Each Redis proof reads the answer of redis-cli, never its exit code.
   #
   # db 1: the ACL user admin answers PONG with the db secret on ::1 and on

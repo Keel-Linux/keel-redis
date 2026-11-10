@@ -125,3 +125,52 @@ assert "cloud" not in d and "nodes" not in d, "a cloud pass of a simple only app
 assert "mode" not in [q["id"] for q in d["questions"]], "no Mode screen comes for one mode"
 PY
 }
+
+@test "manifest: the example spec and the boot test's spec hold against it, with no warning" {
+    # keel takes a spec that names no appliance with no check of the
+    # manifests, and the example then named app.options.db_user, which no
+    # manifest of the chain declares: keel refuses it when the spec names
+    # redis (keel-postgresql found the same, BR1 and BR2, 2026-11-06)
+    [ -n "${KEEL_SRC:-}" ] || skip "KEEL_SRC is not set"
+    run tests/lib/manifest-root.sh "$BATS_TEST_TMPDIR/root" "$MANIFEST"
+    [ "$status" -eq 0 ]
+    for spec in keel/instance.example.yaml tests/instance.yaml; do
+        run keel_as_root spec validate --spec "$spec" --no-secret-files --root "$BATS_TEST_TMPDIR/root"
+        echo "$spec: $output"
+        [ "$status" -eq 0 ]
+        [[ "$output" != *Warning* ]]
+    done
+}
+
+@test "manifest: every spec names the redis appliance, its mode and the five overlays of Core, and no option" {
+    for spec in keel/instance.example.yaml tests/instance.yaml; do
+        python3 - "$spec" <<'PY'
+import sys, yaml
+d = yaml.safe_load(open(sys.argv[1]))
+assert d["appliance"]["name"] == "redis", "appliance.name"
+assert d["installation"]["mode"] == "simple", "installation.mode"
+assert sorted(d["overlays"]) == ["crowdsec", "etcd", "installer", "vip", "wireguard"], d["overlays"]
+assert "options" not in (d.get("app") or {}), "app.options: the manifest declares none"
+assert d["secrets"]["db_password"], "secrets.db_password"
+PY
+    done
+}
+
+@test "manifest: the commissioning contract's instance is the example's shape" {
+    python3 - keel/instance.example.yaml tests/commission.yaml <<'PY'
+import sys, yaml
+example = yaml.safe_load(open(sys.argv[1]))
+instance = yaml.safe_load(open(sys.argv[2]))["instance"]
+for key in ("version", "network", "tls", "appliance", "installation", "overlays", "hub", "first_login_wizard"):
+    assert instance[key] == example[key], key
+assert sorted(instance["secrets"]) == sorted(example["secrets"]), "secrets"
+PY
+}
+
+@test "manifest: the contract runs the check that keel prints for redis, and asks no Monit socket" {
+    # a single node has a monitor only when its spec turns one on with a
+    # channel (decision 0021), so the contract runs the probe itself
+    grep -qF 'keel manifest show --resolved redis' tests/commission.yaml
+    run ! grep -qF 'monit -B summary' tests/commission.yaml
+    run ! grep -qF 'keel-manifest.conf' tests/commission.yaml
+}

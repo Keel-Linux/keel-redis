@@ -23,16 +23,14 @@
 # unit-redis lists what the component ships.
 COMMON_OVERLAYS += $(CURDIR)/overlay
 
-# Webmin comes from core and answers on 12321. Nothing here serves a web
-# page, so 80 and 443 stay shut: 6379 is Redis, 12321 the panel, 12320 the
-# web shell core carries.
-#
-# 6379 is open in the firewall and the server listens on loopback only
-# (unit-redis, 10-keel-bind.conf), which is deliberate and is the same
-# arrangement keel-mariadb ships: the port an operator would have to open to
-# use the console's cloud modes is not also a second thing to remember, and
-# nothing answers on it until the bind list says so.
-WEBMIN_FW_TCP_INCOMING = 22 6379 12320 12321
+# Webmin comes from core and answers on 12321. This list holds the uplink
+# ports only: 22 for SSH and 12321 for the panel. Nothing here serves a web
+# page, so 80 and 443 stay shut. 6379 is a mesh port of the manifest
+# (expose: mesh): keel opens it only on the WireGuard interface
+# (keel/manifest/firewall.py, decision 0041, item 6), so it is not here.
+# Keel Core has no web shell, so 12320 is not here either.
+# tests/firewall.bats reads this line.
+WEBMIN_FW_TCP_INCOMING = 22 12321
 
 include $(FAB_PATH)/common/mk/turnkey.mk
 

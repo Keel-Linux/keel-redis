@@ -66,9 +66,11 @@ no database account.** Its secret is one of two things, and the vocabulary of
 decision 0013 leaves both open: ``requirepass``, which is the password of the
 built in ``default`` user, or an ACL user with a password of its own.
 
-This layer's component uses **an ACL user**, named ``admin``
-(``app.options.db_user`` renames it), so a client authenticates with a user
-name and that password::
+This layer's component uses **an ACL user**, named ``admin``, so a client
+authenticates with a user name and that password. The hook of unit-redis
+reads ``APP_DB_USER`` for another name, but this manifest declares no
+option, and keel refuses ``app.options.db_user`` in a description that
+names the appliance::
 
     REDISCLI_AUTH=$(cat /etc/keel/secrets/db_password) \
         redis-cli -h ::1 -p 6379 --user admin PING

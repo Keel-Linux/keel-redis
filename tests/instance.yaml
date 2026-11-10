@@ -26,6 +26,22 @@ tls:
   acme:
     enabled: false
 
+appliance:
+  name: redis
+
+installation:
+  # the one mode the manifest allows (modes: [simple], decision 0076)
+  mode: simple
+
+# Every overlay of the chain is written out (decisions 0027 and 0041):
+# those of Core, as this layer adds none.
+overlays:
+  installer: enabled
+  wireguard: disabled
+  etcd: disabled
+  crowdsec: disabled
+  vip: disabled
+
 secrets:
   root_password:
     file: /etc/keel/secrets/root_password
@@ -35,11 +51,6 @@ secrets:
   # it is the password of an ACL user, and the server keeps its SHA-256.
   db_password:
     file: /etc/keel/secrets/db_password
-
-app:
-  options:
-    # Renders to APP_DB_USER: the ACL user the declared secret belongs to.
-    db_user: admin
 
 database:
   server:
