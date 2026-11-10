@@ -19,9 +19,16 @@ processes:
     # adds the node's overlay address and the VIP, so 6379 is a mesh port:
     # on the WireGuard interface, never on the uplink.
     listen: [{port: 6379, protocol: tcp, expose: mesh}]
+# The check asks INFO, as keel inspect does. It is not Monit's redis
+# protocol: that test sends PING and takes only +PONG or -NOAUTH, and the
+# default account of 20-keel-acl.conf (unit-redis) may run INFO only, so
+# Redis answers -NOPERM, the check fails, and Monit restarts a server that
+# works (Monit 5.34.3 and Redis 8.0.2 of Debian 13). redis-cli exits 1 when
+# nothing answers on [::1]:6379.
 checks:
-  - {name: redis, process: redis, type: protocol, protocol: redis,
-     address: loopback, port: 6379, on_failure: restart}
+  - {name: redis, process: redis, type: command,
+     command: [/usr/bin/redis-cli, -h, '::1', -p, '6379', INFO, server],
+     on_failure: restart}
 secrets:
   - name: db_password
     description: The ACL user "admin" the first boot makes, from DB_PASS

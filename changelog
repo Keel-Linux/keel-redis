@@ -1,3 +1,17 @@
+turnkey-redis-19.0 (13) turnkey; urgency=medium
+
+  * The Monit check of Redis asks INFO with redis-cli on [::1]:6379, as
+    keel inspect does. It was Monit's redis protocol, which sends PING and
+    takes only +PONG or -NOAUTH. The default account of unit-redis may run
+    INFO only, so Redis answers -NOPERM and the check fails. With the
+    block that keel writes for a check with on_failure: restart, Monit then
+    restarts a server that works, sends a critical alert, and stops the
+    watch at the restart limit. Found when the commissioning contract was
+    written: Monit 5.34.3 and Redis 8.0.2 of Debian 13, with the fragments
+    of unit-redis 1.0.4, outside a machine.
+
+ -- KeelLinux maintainers <admin@keellinux.org>  Tue, 10 Nov 2026 13:30:00 +0000
+
 turnkey-redis-19.0 (12) turnkey; urgency=medium
 
   * The manifest says simple is the only installation mode (handbook

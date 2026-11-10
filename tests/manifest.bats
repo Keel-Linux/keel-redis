@@ -23,7 +23,15 @@ MANIFEST=overlay/usr/share/keel/appliances/redis.yaml
 
 @test "manifest: it declares the mesh port and a check on it" {
     grep -q "port: 6379" "$MANIFEST"
-    grep -q "protocol: redis" "$MANIFEST"
+    grep -qF "command: [/usr/bin/redis-cli, -h, '::1', -p, '6379', INFO, server]" "$MANIFEST"
+}
+
+@test "manifest: the check is not Monit's redis protocol, which the default account refuses" {
+    # Monit's redis test sends PING and takes only +PONG or -NOAUTH. The
+    # default account of unit-redis may run INFO only, so Redis answers
+    # -NOPERM, and Monit restarts a server that works (Monit 5.34.3 and
+    # Redis 8.0.2 of Debian 13, 2026-11-10)
+    run ! grep -qE "protocol: *redis" "$MANIFEST"
 }
 
 @test "manifest: it declares the shared database secret" {
