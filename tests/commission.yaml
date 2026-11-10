@@ -1,0 +1,143 @@
+# The commissioning contract of keel-redis (handbook decision 0075).
+# bin/keel-commission of Keel-Linux/.github reads it. It makes a container
+# from the template (or a VM from the ISO) as an operator does, answers the
+# first boot (or preseeds it with the instance below), and then checks what
+# this file says. The CI job "commission / contract" checks only that this
+# file is valid.
+#
+# The manifest allows one mode, simple (modes: [simple], decision 0076), so
+# this contract has no cloud part and no nodes. The passes are
+# lxc-interactive, lxc-preseed and vm-iso.
+#
+# A new first boot question or a new secret is a change of this file in the
+# same pull request (0075, Consequences).
+contract: 1
+appliance: redis
+secrets: [root, db]
+# The prompts are the titles that the first boot draws on tty1. A password
+# comes first as a menu of the same title (Generate or Manual), and the
+# runner takes Manual.
+#
+# No question for the Mode screen. The appliance allows one mode, so the
+# first boot records simple and draws no screen (keelmode.unattended of
+# confconsole). keel-init then shows the mode in a box with the title
+# "Installation mode", and the runner gives that box Enter, as it does for
+# each screen that is not a question here. A mode question would fail the
+# vm-iso pass, where no Mode screen comes.
+questions:
+  - id: root_password
+    hook: 30rootpass
+    prompt: Root Password
+    answer: secret:root
+  # firstboot.d/35redispass of unit-redis (bin/redispass.py): the password
+  # of the ACL user admin
+  - id: db_password
+    hook: 35redispass
+    prompt: Redis password
+    answer: secret:db
+  - id: alert_email
+    hook: 85secalerts
+    prompt: System Notifications
+    answer: admin@example.org
+# keel/instance.example.yaml of this repository in the shape of Core's
+# contract: the appliance, the mode and the five overlays of Core, the
+# secrets of the run, and no instance name (the machine keeps the name that
+# pct create gave it). No app.options: the manifest declares no option, and
+# keel refuses an option that no manifest of the chain declares when the
+# description names the appliance (keel-postgresql, BR1 and BR2,
+# 2026-11-06). The ACL user is then admin, the default of unit-redis.
+instance:
+  version: 1
+  network:
+    managed_by: host
+    interfaces:
+      eth0:
+        ipv6:
+          method: auto
+  tls:
+    acme:
+      enabled: false
+  appliance:
+    name: redis
+  installation:
+    mode: simple
+  overlays:
+    installer: enabled
+    wireguard: disabled
+    etcd: disabled
+    crowdsec: disabled
+    vip: disabled
+  secrets:
+    root_password: secret:root
+    db_password: secret:db
+  hub:
+    api_key: skip
+  security:
+    alerts: admin@example.org
+    updates_at_first_boot: skip
+  first_login_wizard: false
+# Each proof runs as root in the machine, with the value of its secret in
+# $SECRET. redis-cli exits 0 when the server replies with an error, so each
+# Redis proof reads the answer and never the exit code.
+proofs:
+  - {secret: root, kind: shadow, user: root}
+  # The machine, in one proof (the record names a proof by its secret and
+  # its kind):
+  # 1. postfix may send off the machine (Core's proof: the core layer of
+  #    2026-11-06 had "inet_protocols = " and the alert mail stayed
+  #    deferred).
+  # 2. The first boot recorded the one mode the manifest allows.
+  # 3. keel resolves the chain of the manifests, and each unit that
+  #    redis.yaml and core.yaml name is a unit of the machine.
+  # 4. No unit failed.
+  # 5. Redis listens on port 6379 of the manifest, on the two loopback
+  #    addresses of 10-keel-bind.conf of unit-redis and on no other address:
+  #    in the simple mode, 6379 is not on the network.
+  # 6. Monit includes the checks that keel derives from the manifests, and
+  #    when no check is "Initializing" (6 min at most), each one is OK. Two
+  #    of them are the process and the check of redis.yaml: keel-unit-redis
+  #    and keel-check-redis (redis-cli INFO on [::1]:6379, 19.0-13).
+  - secret: root
+    kind: command
+    run: 'test "$(postconf -h inet_protocols)" = all && ! postqueue -p | grep -q "network protocols are disabled" && python3 -c "import yaml; d = yaml.safe_load(open(\"/etc/keel/instance.yaml\")); assert d[\"installation\"][\"mode\"] == \"simple\"" && keel manifest validate >/dev/null 2>&1 && for u in $(sed -n "s/^ *unit: *\([A-Za-z0-9@._-]*\).*/\1/p" /usr/share/keel/appliances/core.yaml /usr/share/keel/appliances/redis.yaml); do systemctl cat "$u" >/dev/null 2>&1 || exit 1; done && test "$(systemctl --failed --no-legend --plain | wc -l)" = 0 && test "$(ss -Hltn "sport = :6379" | awk "{print \$4}" | LC_ALL=C sort | tr "\n" " ")" = "127.0.0.1:6379 [::1]:6379 " && test "$(readlink /etc/monit/conf.d/keel-manifest.conf)" = /etc/keel/monit/keel-manifest.conf && n=$(sed -n "s/^check [a-z]* \(keel-[a-z0-9-]*\) .*/\1/p" /etc/keel/monit/keel-manifest.conf) && echo "$n" | grep -qx keel-unit-redis && echo "$n" | grep -qx keel-check-redis && for i in $(seq 36); do s=$(monit -B summary) || exit 1; echo "$s" | grep -q " Initializing " || break; sleep 10; done && for x in $n; do echo "$s" | grep -qE "^ *$x +OK( |$)" || exit 1; done'
+  # Redis, in one proof:
+  # 1. The ACL user admin answers PONG with the db secret on ::1 and on
+  #    127.0.0.1 (the bind of unit-redis), port 6379.
+  # 2. With no secret, a key is refused (NOPERM) on both addresses: the
+  #    default account may run INFO only (20-keel-acl.conf of unit-redis).
+  # 3. A wrong password is refused (WRONGPASS).
+  # 4. Persistence is on: Debian's redis.conf has no save line, so Redis
+  #    keeps its save points (3600 1 300 100 60 10000), and saves at a stop.
+  # 5. A key written before a restart of redis-server is there after it.
+  #    The proof then deletes the key.
+  - secret: db
+    kind: command
+    run: 'c="redis-cli --no-auth-warning -p 6379"; for h in ::1 127.0.0.1; do test "$(REDISCLI_AUTH="$SECRET" $c -h $h --user admin PING 2>&1)" = PONG || exit 1; $c -h $h GET kc:probe 2>&1 | grep -q "^NOPERM" || exit 1; done; REDISCLI_AUTH="x$SECRET" $c -h ::1 --user admin PING 2>&1 | grep -q WRONGPASS || exit 1; test -n "$(REDISCLI_AUTH="$SECRET" $c -h ::1 --user admin CONFIG GET save 2>&1 | sed -n 2p)" || exit 1; test "$(REDISCLI_AUTH="$SECRET" $c -h ::1 --user admin SET kc:probe kc-persist 2>&1)" = OK || exit 1; systemctl restart redis-server || exit 1; for i in $(seq 30); do $c -h ::1 INFO server 2>/dev/null | grep -q "^redis_version:" && break; sleep 1; done; test "$(REDISCLI_AUTH="$SECRET" $c -h ::1 --user admin GET kc:probe 2>&1)" = kc-persist || exit 1; test "$(REDISCLI_AUTH="$SECRET" $c -h ::1 --user admin DEL kc:probe 2>&1)" = 1'
+# The process of redis.yaml, the processes of Core's manifest, and Monit,
+# which runs the checks that keel derives from the manifests
+services: [redis-server, ssh, webmin, postfix, cron, monit]
+# Webmin of Core is the one administration interface of the image. Debian 13
+# has no Webmin module for Redis, and Redis Commander is not in this layer
+# (README.rst, "What it deliberately leaves out").
+urls:
+  - {url: 'https://127.0.0.1:12321/', status: 200}
+forbidden:
+  # the build tools of a layer stay on the build host (conf.d/main)
+  - {kind: path, name: /usr/local/lib/keel-build}
+  # a database layer serves no web page of its own
+  - {kind: path, name: /etc/nginx}
+  # the hooks of the upstream appliance that this layer took out (changelog
+  # 19.0-2): a world readable requirepass, and the bind questions
+  - {kind: hook, name: 20regen-redis-secrets}
+  - {kind: hook, name: 40redis}
+# The web pages of the gallery (decisions 0075 and 0077): Webmin before and
+# after the login with the root secret.
+screenshots:
+  - name: webmin
+    port: 12321
+    url: /
+    login: {user_field: 'input[name=user]', user: root, password_field: 'input[name=pass]', secret: root, submit: 'button[type=submit]'}
+    # the dashboard of Webmin draws after the login; 8 s took a half drawn
+    # page on a busy VM of BR2 (keel-postgresql, vm-iso, 2026-11-06)
+    wait: 20
+    text: System hostname

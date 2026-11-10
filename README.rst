@@ -172,3 +172,20 @@ the server with ``keel inspect``, and runs ``keel diff``.
 
 The first boot hook, its library and the component's conf script are measured
 in ``keel-linux/unit-redis``, which is where they live.
+
+The commissioning contract
+--------------------------
+
+``tests/commission.yaml`` says what the first boot asks, which login proves
+each secret, which services run, which URL answers and what the image must
+not hold (decision 0075). ``bin/keel-commission`` of ``Keel-Linux/.github``
+reads it to commission the template and the ISO on BR1 and BR2, and the job
+``commission / contract`` checks that it is there and valid. The manifest
+allows the simple mode only, so the contract has no cloud part: the passes
+are ``lxc-interactive``, ``lxc-preseed`` and ``vm-iso``. Beyond the checks
+of Core, it proves that Redis answers on ``[::1]:6379`` and
+``127.0.0.1:6379`` and on no other address, that the ACL user ``admin``
+answers with the declared secret and that a client with no secret or a
+wrong one is refused, that a key written before a restart of the server is
+there after it, and that the Monit checks keel derives from the manifests
+are OK.
