@@ -26,6 +26,9 @@ tls:
   acme:
     enabled: false
 
+# No appliance, mode or overlays: the boot test applies this spec with the
+# keel of the CI host, which has no manifest of redis (tests/manifest.bats).
+# No app.options either: the ACL user is admin, the default of unit-redis.
 secrets:
   root_password:
     file: /etc/keel/secrets/root_password
@@ -35,11 +38,6 @@ secrets:
   # it is the password of an ACL user, and the server keeps its SHA-256.
   db_password:
     file: /etc/keel/secrets/db_password
-
-app:
-  options:
-    # Renders to APP_DB_USER: the ACL user the declared secret belongs to.
-    db_user: admin
 
 database:
   server:

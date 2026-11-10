@@ -18,7 +18,15 @@ against stubbed apt output. The workflow calls it through the organization's
 | `boot-test.bats` | the logic of the boot test: argument parsing, address discovery, deadlines, the container marks, the client calls, the verdicts and the role reading |
 | `apt-files.bats` | the recipe's apt files: no Keel source or pin in the overlay, no staging source anywhere, the upgrade from the archive and its check |
 | `project-packages.bats` | `bin/keel-project-packages`: each project package installed at apt's candidate, from the Keel archive, in the track's suite |
-| `unit-pin.bats` | the unit-redis tag the Makefile and README.rst clone: the same in both, the manifest entry README.rst names, and no older than 1.0.4 |
+| `unit-pin.bats` | the unit-redis tag the Makefile and README.rst clone: the same in both, the manifest entry README.rst names, and no older than 1.0.5 |
+| `firewall.bats` | the uplink ports of the Webmin firewall (22 and 12321 only) and the services screen, which names no web shell |
+| `manifest.bats` | the appliance manifest: its name, base, port, secret and mode, and a Monit check that is not the redis protocol test. With `KEEL_SRC` (a checkout of keel) and `KEEL_MANIFEST_SOURCES` (a directory with checkouts of keel-core and common), keel's own validator resolves the manifest along core in a scratch root that `lib/manifest-root.sh` makes, renders its Monit checks, and holds the example, the boot test's spec and the instance of `commission.yaml` against it; keel runs in a user namespace when the test is not root |
+
+`commission.yaml` is the commissioning contract (handbook decision 0075),
+which `bin/keel-commission` of `Keel-Linux/.github` reads. The job
+`commission / contract` checks that it is valid:
+
+    keel-commission --check tests/commission.yaml
 
 The first boot hook, its library and the component's conf script are not
 here. They belong to `keel-linux/unit-redis` and are measured there.

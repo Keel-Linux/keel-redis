@@ -10,8 +10,10 @@ acceptance test of a recipe, docs/org-plan.md section 1).
 | --- | --- | --- | --- |
 | tests/lib/boot-test-lib.sh | tests/boot-test.bats (52 tests) | 100 percent (187/187) under kcov | argument parsing, address discovery, deadlines, the container marks, the client calls, the four verdicts, the role keel inspect reports, and the Webmin and diff verdicts |
 | bin/keel-project-packages | tests/project-packages.bats (6 tests) | 100 percent (32/32) under kcov | inithooks, confconsole and keel are installed at apt's candidate, and the candidate is the Keel archive's in the suite of the track (KEEL_APT_TRACK); a version below the candidate, another source or an unknown track fails |
-| Makefile, README.rst | tests/unit-pin.bats (3 tests) | static | the unit-redis tag cloned is the same in both, matches the manifest entry, and carries 1.0.4's ACL fragment fix |
+| Makefile, README.rst | tests/unit-pin.bats (3 tests) | static | the unit-redis tag cloned is the same in both, matches the manifest entry, and is no older than 1.0.5 (the password question that waits for keel-init) |
 | Makefile, plan, overlay, conf.d/main | tests/apt-files.bats (6 tests) | static | no Keel source or 1001 pin in the overlay; no staging source, pin, keyring or archive copy anywhere; the upgrade from the archive, then the check, which enters the tree before the conf scripts and leaves it |
+| Makefile, overlay/etc/confconsole/services.txt | tests/firewall.bats (5 tests) | static | the uplink list of the Webmin firewall is 22 and 12321; no mesh port 6379 and no 12320; the services screen names no web shell |
+| the appliance manifest, keel/instance.example.yaml, tests/instance.yaml, tests/commission.yaml | tests/manifest.bats | static, and keel's own validator | with KEEL_SRC and KEEL_MANIFEST_SOURCES: the manifest resolves along core, its Monit check of Redis is redis-cli INFO and not the redis protocol test, and the example, the boot test's spec and the instance of the contract hold with no warning |
 | conf.d/main | the build | integration only | build time script, 0004 pragmatic limits |
 | tests/boot-test.sh | itself | integration only | the thin main of the acceptance test: keel and LXC as root |
 | the first boot hook, its library, the component's conf | keel-linux/unit-redis | not this repository | 100 percent over 65 bats tests there |

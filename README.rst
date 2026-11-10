@@ -6,14 +6,14 @@ TurnKey Linux appliances, and corresponding to the upstream appliance
 `turnkeylinux-apps/redis <https://github.com/turnkeylinux-apps/redis>`_ for
 the database half of what that appliance is::
 
-    git clone --branch v1.0.4 \
+    git clone --branch v1.0.5 \
         https://github.com/keel-linux/unit-redis.git unit.d/redis
     bt-layer redis --parent core
 
 The server comes from the ``unit.d/redis`` component: `keel-linux/unit-redis
 <https://github.com/keel-linux/unit-redis>`_ carries its plan, its overlay
 and its conf script, fab applies it, and ``bt-layer`` records it in the layer
-manifest as ``units redis@1.0.4``. Materialising ``unit.d`` from the pin is
+manifest as ``units redis@1.0.5``. Materialising ``unit.d`` from the pin is
 the assembly step decision 0010 names as work of the project and does not
 exist yet, so the clone above is that step for now; ``unit.d/`` is ignored by
 git here.
@@ -66,9 +66,11 @@ no database account.** Its secret is one of two things, and the vocabulary of
 decision 0013 leaves both open: ``requirepass``, which is the password of the
 built in ``default`` user, or an ACL user with a password of its own.
 
-This layer's component uses **an ACL user**, named ``admin``
-(``app.options.db_user`` renames it), so a client authenticates with a user
-name and that password::
+This layer's component uses **an ACL user**, named ``admin``, so a client
+authenticates with a user name and that password. The hook of unit-redis
+reads ``APP_DB_USER`` for another name, but this manifest declares no
+option, and keel refuses ``app.options.db_user`` in a description that
+names the appliance::
 
     REDISCLI_AUTH=$(cat /etc/keel/secrets/db_password) \
         redis-cli -h ::1 -p 6379 --user admin PING
@@ -172,3 +174,20 @@ the server with ``keel inspect``, and runs ``keel diff``.
 
 The first boot hook, its library and the component's conf script are measured
 in ``keel-linux/unit-redis``, which is where they live.
+
+The commissioning contract
+--------------------------
+
+``tests/commission.yaml`` says what the first boot asks, which login proves
+each secret, which services run, which URL answers and what the image must
+not hold (decision 0075). ``bin/keel-commission`` of ``Keel-Linux/.github``
+reads it to commission the template and the ISO on BR1 and BR2, and the job
+``commission / contract`` checks that it is there and valid. The manifest
+allows the simple mode only, so the contract has no cloud part: the passes
+are ``lxc-interactive``, ``lxc-preseed`` and ``vm-iso``. Beyond the checks
+of Core, it proves that Redis answers on ``[::1]:6379`` and
+``127.0.0.1:6379`` and on no other address, that the ACL user ``admin``
+answers with the declared secret and that a client with no secret or a
+wrong one is refused, that a key written before a restart of the server is
+there after it, and that the Monit checks keel derives from the manifests
+are OK.
