@@ -146,14 +146,8 @@ forbidden:
   # 19.0-2): a world readable requirepass, and the bind questions
   - {kind: hook, name: 20regen-redis-secrets}
   - {kind: hook, name: 40redis}
-# The web pages of the gallery (decisions 0075 and 0077): Webmin before and
-# after the login with the root secret.
-screenshots:
-  - name: webmin
-    port: 12321
-    url: /
-    login: {user_field: 'input[name=user]', user: root, password_field: 'input[name=pass]', secret: root, submit: 'button[type=submit]'}
-    # the dashboard of Webmin draws after the login; 8 s took a half drawn
-    # page on a busy VM of BR2 (keel-postgresql, vm-iso, 2026-11-06)
-    wait: 20
-    text: System hostname
+# No web screenshot: the one web interface of this image is Webmin, and
+# it answers only on the access network of the administrators (decision
+# 0098, keel-core 0.1.5). The runner reaches the machine from outside,
+# through the PVE host, where 12321 is closed. The url above proves that
+# Webmin answers on the machine.
